@@ -78,7 +78,7 @@ distinction is deliberate — see `PRD.md` Section 4.
 
 ## Team
 
-Delulu Developers — Krish Ketankumar Shah, Rishabh Nandekar.
+Apostrophe — Rishabh Nandekar, Krish Ketankumar Shah.
 Reference brief: Smart India Hackathon 2026, Problem Statement 26189.
 
 ---
