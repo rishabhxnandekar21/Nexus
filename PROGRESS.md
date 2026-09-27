@@ -21,7 +21,7 @@
 |---|---|---|---|---|---|---|
 | W1 | Repo, scaffold, Docker Postgres | Both | 🔵 in review | phase-0-scaffold-rishabh | — | `/api/health` ok, db connected |
 | W1 | `models.py` — all six tables | Both | 🔵 in review | phase-0-scaffold-rishabh | — | 6 tables + 5 indexes in psql |
-| W1 | `auth.py` — JWT + roles | Both | ⬜ not started | — | — | — |
+| W1 | `auth.py` — JWT + roles | Both | 🔵 in review | phase-2-auth-rishabh | — | 18/18 checks: login, /me, 401s, 403 |
 | W1 | `audit.py` — hash chain + pytest | Both | ⬜ not started | — | — | — |
 | W1 | `schemas.py` — all contracts | Both | ⬜ not started | — | — | — |
 | W1 | Router stubs returning fake data | Both | ⬜ not started | — | — | — |
@@ -67,6 +67,7 @@ an existing line.
 | 2026-09-27 | Rishabh | docs | W1-1 bootstrap. Repo is `Nexus` (not `kadi`/`crimenet`) - name corrected in PRD.md and the CLAUDE.md tree. TEAM-WORKFLOW section 2 block pasted into CLAUDE.md as instructed. | no |
 | 2026-09-27 | Rishabh | CLAUDE.md | Section 4 tree only: added `analysis.py`, `backend/tests/test_audit.py`, `pages/Stats.jsx`, `components/AnalysisPanel.jsx`. All four are in the PRD Section 11 ownership table but were missing from the tree. Also created `backend/app/` and `backend/app/routers/` with empty `__init__.py`. | no |
 | 2026-09-28 | Rishabh | requirements.txt, models.py, main.py | W1-2 + W1-3. `requirements.txt` = the 13 deps in CLAUDE.md Section 3, nothing added. New `config.py`, `database.py` (Base, engine, SessionLocal, get_db, init_db), `main.py` (CORS for :5173 + GET /api/health), `models.py` (all six tables, the five required indexes, CHECK constraints on role/entity_type/status). | yes - run `python -c "from app.database import init_db; init_db()"` |
+| 2026-09-28 | Rishabh | schemas.py, auth.py, main.py, .env.example | W1-4. New `auth.py` (bcrypt direct + PyJWT, `get_current_user`, `require_admin`). New `schemas.py` with ONLY `UserOut`, `LoginRequest`, `TokenResponse` - **W1-6 should add the remaining ~17 models to this file, not recreate it.** `main.py` gained two lines mounting the auth router. `.env.example` gained a comment about minimum JWT_SECRET length. | no |
 
 ---
 

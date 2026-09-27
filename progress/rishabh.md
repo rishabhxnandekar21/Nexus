@@ -3,6 +3,83 @@
 > Only Rishabh writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-28 · W1-4 auth.py · `phase-2-auth-rishabh`
+
+Branched off `phase-0-scaffold-rishabh`, **not** off `main`, because `models.py` and
+`database.py` are still on that unmerged branch. Stacked deliberately rather than
+self-merging the scaffold: the Decisions log wants PRs landing on both GitHub
+profiles, and merging my own work would throw that record away. Once Krish reviews
+and merges the scaffold PR, this rebases onto `main`.
+
+**Done**
+- `auth.py` — `hash_password`, `verify_password`, `create_access_token`,
+  `decode_token`, `get_current_user`, `require_admin`. `bcrypt.hashpw` /
+  `bcrypt.checkpw` directly and PyJWT, per the rejected-technology table. Installed
+  bcrypt is 5.0.0, which is exactly the version family that breaks `passlib`.
+- `routers/auth.py` — `POST /api/auth/login` (OAuth2 form body, per §6) and
+  `GET /api/auth/me`.
+- `schemas.py` — **only** `UserOut`, `LoginRequest`, `TokenResponse`.
+- `main.py` — two lines: import and `include_router`.
+- `dev_users.py` — one agency, two users, idempotent. Temporary; delete when
+  `seed.py` lands.
+
+**Verified — 18/18, against the live server**
+
+| Criterion | Result |
+|---|---|
+| login returns a token | `POST /api/auth/login` → 200, `access_token`, `token_type: bearer`, embedded user |
+| `/auth/me` returns the user | 200, username + role + `agency_code` GJ_POLICE + agency name |
+| missing token → 401 | `{"detail":"Not authenticated"}` |
+| malformed token → 401 | `{"detail":"invalid token"}` |
+| expired token → 401 | `{"detail":"token has expired"}` |
+| token signed with wrong secret → 401 | `{"detail":"invalid token"}` |
+| `require_admin` → 403 for investigator | `403: this action requires the admin role` |
+| `require_admin` passes an admin | returns the user unchanged |
+| wrong password → 401 | same message as unknown username |
+| unknown username → 401 | identical message, so valid usernames are not disclosed |
+
+`require_admin` is verified at the function level, not over HTTP, because no
+admin-only route exists yet — the first is `POST /entities` in W1-7. Worth
+re-checking over HTTP once that exists.
+
+**Decisions**
+- `get_current_user` re-reads the `User` row on every request rather than trusting
+  the JWT claims, so a user deleted or moved to another agency cannot keep acting on
+  a still-valid token. Costs one indexed primary-key lookup per request.
+- Login returns an identical 401 for a bad password and an unknown username, so the
+  endpoint is not a username oracle.
+- `verify_password` catches `ValueError` and returns `False`. bcrypt rejects
+  passwords over 72 bytes rather than truncating them, and a long password is a
+  failed login, not a 500.
+- The token carries `agency_id` as a claim, but scoping code should read it from the
+  `User` row, not the claim, for the same staleness reason.
+
+**Files touched**
+- `backend/app/auth.py` (new), `backend/app/routers/auth.py` (new),
+  `backend/app/schemas.py` (new), `backend/app/main.py` (+2 lines),
+  `backend/dev_users.py` (new), `.env.example` (comment), `PROGRESS.md`
+
+**Next**
+- W1-5 `audit.py` — hash chain and its pytest. Same branch or a new one.
+
+**For Krish**
+- **`schemas.py` now exists with three auth models. W1-6 should ADD the remaining
+  ~17 to it, not recreate the file** — recreating it would drop `UserOut`,
+  `TokenResponse` and `LoginRequest` and break login. Import `ENTITY_TYPES`,
+  `USER_ROLES` and `RESOLUTION_STATUSES` from `models.py` rather than repeating the
+  literals.
+- `main.py` mounts routers with `app.include_router(...)` after the CORS block. Add
+  yours the same way.
+- For any protected route: `user: User = Depends(get_current_user)`, and
+  `Depends(require_admin)` for admin-only. `POST /entities` is the first that needs
+  the admin one.
+- Login credentials for testing are in `backend/dev_users.py`. Run
+  `python dev_users.py` once after `init_db()`.
+- `.env.example` now notes that `JWT_SECRET` needs 32+ bytes — the old placeholder
+  was short enough to make PyJWT warn on every token.
+
+---
+
 ### 2026-09-28 · W1-2 + W1-3 · `phase-0-scaffold-rishabh`
 
 Took these two although KICKOFF suggests Krish, because they are the critical path
