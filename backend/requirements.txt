@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg[binary]
+pydantic
+pydantic-settings
+pyjwt
+bcrypt
+python-multipart
+networkx
+pandas
+google-generativeai
+python-dotenv
