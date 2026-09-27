@@ -1,0 +1,29 @@
+"""FastAPI app: CORS, router mounts, and the health check."""
+
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+
+app = FastAPI(title="CrimeNet AI", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/api/health")
+def health(db: Session = Depends(get_db)) -> dict[str, str]:
+    """Liveness plus a real round trip to Postgres."""
+    try:
+        db.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail=f"database unreachable: {exc}") from exc
+    return {"status": "ok", "db": "connected"}
