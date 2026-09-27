@@ -11,7 +11,7 @@
 >   `progress/rishabh.md`.
 
 **Current phase:** Week 1 — Foundation (both)
-**Last updated:** 2026-09-27
+**Last updated:** 2026-09-28
 
 ---
 
@@ -19,8 +19,8 @@
 
 | Phase | Feature | Owner | Status | Branch | PR | Verified |
 |---|---|---|---|---|---|---|
-| W1 | Repo, scaffold, Docker Postgres | Both | 🟡 in progress | main | — | repo — yes |
-| W1 | `models.py` — all six tables | Both | ⬜ not started | — | — | — |
+| W1 | Repo, scaffold, Docker Postgres | Both | 🟡 Rishabh | phase-0-scaffold-rishabh | — | repo — yes |
+| W1 | `models.py` — all six tables | Both | 🟡 Rishabh | phase-0-scaffold-rishabh | — | — |
 | W1 | `auth.py` — JWT + roles | Both | ⬜ not started | — | — | — |
 | W1 | `audit.py` — hash chain + pytest | Both | ⬜ not started | — | — | — |
 | W1 | `schemas.py` — all contracts | Both | ⬜ not started | — | — | — |
