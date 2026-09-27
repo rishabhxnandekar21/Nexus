@@ -3,6 +3,58 @@
 > Only Rishabh writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-27 · directory skeleton · committed to `main`
+
+**Done**
+- Created `backend/app/`, `backend/app/routers/`, `backend/tests/`
+- `backend/app/__init__.py` and `backend/app/routers/__init__.py` — empty, but
+  genuinely required rather than placeholders: without them `from app.main import
+  app` and `from app.routers import auth` do not resolve
+- `backend/tests/.gitkeep` so the directory survives a commit; it goes away when
+  `test_audit.py` lands in W1-5
+- `CLAUDE.md` Section 4 tree: added `analysis.py`, `backend/tests/test_audit.py`,
+  `pages/Stats.jsx` and `components/AnalysisPanel.jsx`. All four appear in the
+  `PRD.md` Section 11 ownership table and in the ownership block at the top of
+  `CLAUDE.md`, but were absent from the tree — so the documented layout
+  contradicted the ownership map.
+
+**Deliberately not done**
+- **No `frontend/` directory.** `npm create vite@latest frontend` in W1-8 refuses
+  to scaffold into a non-empty directory without prompting to delete its contents,
+  so pre-creating `frontend/src/...` would actively get in the way. Vite creates it.
+- No `requirements.txt`, `config.py`, `database.py`, `main.py`, `models.py` or
+  `schemas.py`. Those are W1-2 and W1-3, Krish's tasks. Only the directories and
+  the two package `__init__.py` files exist.
+- No `seed.py`, `resolution.py`, `analysis.py` or `llm.py`. Mine, but W2 onward.
+- No service layer, no repository pattern, no `core/` or `utils/` package. The flat
+  layout in `CLAUDE.md` Section 4 is the structure, per Section 2.
+
+**Verified**
+- `git diff --stat CLAUDE.md`: 6 insertions, 1 deletion — the deletion being the
+  `AuditLog.jsx` connector changing from last-child to mid-child. Nothing outside
+  the Section 4 tree was touched.
+- Tree renders with correct box-drawing alignment (first attempt corrupted the
+  prefixes because these lines start with `│`, not whitespace; reverted via
+  `git checkout` and redone)
+
+**Files touched**
+- `CLAUDE.md` (Section 4 tree only), `PROGRESS.md` (shared-file log),
+  `backend/app/__init__.py` (new), `backend/app/routers/__init__.py` (new),
+  `backend/tests/.gitkeep` (new)
+
+**Next**
+- Still blocked on W1-2 and W1-3 before W1-4 `auth.py` can start.
+
+**For Krish**
+- `backend/app/` and `backend/app/routers/` already exist with `__init__.py`.
+  **W1-2 and W1-3 are otherwise untouched** — every file those tasks list is still
+  yours to write.
+- I made a small edit to the `CLAUDE.md` Section 4 tree, logged in `PROGRESS.md`.
+  Pull before you touch that file.
+- There is no `frontend/` directory yet, on purpose — see above.
+
+---
+
 ### 2026-09-27 · W1-1 repo bootstrap · committed directly to `main`
 
 **Done**

@@ -179,6 +179,8 @@ Nexus/
 ├── backend/
 │   ├── requirements.txt
 │   ├── seed.py                  # generate synthetic data + load public datasets
+│   ├── tests/
+│   │   └── test_audit.py        # the one test - hash chain integrity
 │   └── app/
 │       ├── main.py              # FastAPI app, CORS, router mounts
 │       ├── config.py            # pydantic-settings, reads .env
@@ -189,6 +191,7 @@ Nexus/
 │       ├── audit.py             # hash chain write + verify
 │       ├── graph.py             # NetworkX build, scoping, analytics
 │       ├── resolution.py        # entity resolution scoring
+│       ├── analysis.py          # what-if simulation + link prediction
 │       ├── llm.py               # LLM calls + response cache
 │       └── routers/
 │           ├── auth.py
@@ -211,12 +214,14 @@ Nexus/
         │   ├── Dashboard.jsx        # the main graph screen
         │   ├── EntityDetail.jsx
         │   ├── Resolution.jsx       # review queue
-        │   └── AuditLog.jsx
+        │   ├── AuditLog.jsx
+        │   └── Stats.jsx            # landing / counts page
         └── components/
             ├── GraphView.jsx        # Cytoscape wrapper
             ├── Timeline.jsx         # date range slider
             ├── SearchBar.jsx
             ├── NLQueryBox.jsx
+            ├── AnalysisPanel.jsx    # what-if / prediction results
             └── EntityPanel.jsx
 ```
 

@@ -65,6 +65,7 @@ an existing line.
 |---|---|---|---|---|
 | 2026-09-25 | Both | — | Repo created, foundation week begins | — |
 | 2026-09-27 | Rishabh | docs | W1-1 bootstrap. Repo is `Nexus` (not `kadi`/`crimenet`) - name corrected in PRD.md and the CLAUDE.md tree. TEAM-WORKFLOW section 2 block pasted into CLAUDE.md as instructed. | no |
+| 2026-09-27 | Rishabh | CLAUDE.md | Section 4 tree only: added `analysis.py`, `backend/tests/test_audit.py`, `pages/Stats.jsx`, `components/AnalysisPanel.jsx`. All four are in the PRD Section 11 ownership table but were missing from the tree. Also created `backend/app/` and `backend/app/routers/` with empty `__init__.py`. | no |
 
 ---
 
