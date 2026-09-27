@@ -1,0 +1,26 @@
+# ---- Secrets ----
+.env
+.env.local
+.env.*.local
+
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# ---- Node / Vite ----
+node_modules/
+dist/
+.vite/
+
+# ---- Local data & logs ----
+*.db
+*.log
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
