@@ -79,8 +79,8 @@ export default function Dashboard() {
       )}
 
       <p className="text-xs text-slate-500">
-        Live data, agency-scoped by build_graph(). Counts stay at zero until seed.py
-        populates the database.
+        Live data, agency-scoped by build_graph(). These counts change with who is
+        logged in. Currently loaded from dev_data.py, which seed.py replaces in W2.
       </p>
     </div>
   )

@@ -3,6 +3,92 @@
 > Only Krish writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-29 · W2 F3a closed out properly · `w2-graph-krish`
+
+Went back over F3a before starting anything else. It was pushed working but not
+finished - the exit criterion had only been argued, not shown, and the rewrite
+had left debris behind. Six things fixed.
+
+**1. The exit criterion is now actually met, on screen**
+`PRD.md` Section 10 asks that "an investigator token and an admin token return
+measurably different node counts". Both were returning an empty graph, because
+the database is empty. New **temporary** `backend/dev_data.py` loads the twelve
+stub records, and the criterion now holds live:
+
+| | nodes | edges |
+|---|---|---|
+| investigator (GJ_POLICE) | **10** | **9** |
+| admin | **12** | **14** |
+
+Hidden from the investigator: `+91 99042 55871` and `GJ-05-KL-9082`, both
+another agency and not shared. Still visible because shared: `+91 98250 11223`
+and `GJ-01-AB-4417`. And the consequence I flagged is now observable rather
+than hypothetical - the shared phone appears with **degree 0**, because the
+telecom edge reaching it is scoped out. Both dashboards show these numbers.
+
+`dev_data.py` is not `seed.py` and does not pretend to be: no scenarios, no
+volumes, no determinism, no `--reset`. It reads its rows from
+`routers/entities.py` so there is one copy of the fake network, and it is
+idempotent. It dies with the stubs when F7 lands.
+
+**2. A test that passed only because of ambient state**
+`test_empty_database_is_an_empty_graph_not_an_error` asserted an empty database
+without making one. It passed while the database happened to be empty and
+failed the moment `dev_data.py` ran. It now clears the tables inside the
+rolled-back transaction. Proof the rollback holds: the suite deletes every
+entity and the twelve rows are still there afterwards.
+
+**3. A duplicated NODE_CAP**
+`routers/graph.py` still defined its own `NODE_CAP = 500` from the stub era,
+shadowing the real one in `graph.py`. Two copies of a limit are two copies that
+drift. Removed.
+
+**4. Four dead imports** left in `routers/graph.py` by the rewrite.
+
+**5. setState called synchronously in an effect** (`AuthContext`). `loading` is
+now derived at initialisation from whether a token exists, rather than set true
+and immediately corrected. `localStorage` reads are wrapped - they throw in a
+private window with site data blocked, and no token is the right answer there,
+not a crash on first paint. The frontend now lints clean.
+
+**6. The nav clipped at tablet width** - the agency badge and the logout button
+ran off the right edge. The header row and the user block both wrap now.
+Checked at 375px: three rows, no horizontal overflow.
+
+**Verified, all of it, after the changes**
+- `pytest tests/` - 25 passed
+- `npm run lint` - clean, no warnings
+- `npm run build` - production build succeeds
+- no unused imports anywhere in `app/`, `tests/` or `dev_data.py`
+- live: centring at depth 1 and 2, investigator 7 nodes vs admin 10 around the
+  same centre, an investigator asking for an RTO-only node gets **404 not 403**
+  so existence does not leak, types filter, date windows, 401 without a token
+- audit chain valid at 43 rows
+- `dev_data.py` run twice: second run creates nothing
+
+**Still not mine to do**
+- `seed.py` and the three scenarios are F7, Rishabh's. `dev_data.py` unblocks
+  verification; it does not replace F7.
+- S2 is **not** marked proved in the demo table. Two different node counts is
+  the API half. "Two visibly different graphs" needs the Cytoscape canvas,
+  which is W3.
+
+**Files touched**
+- `backend/dev_data.py` (new), `backend/tests/test_graph.py`,
+  `backend/app/routers/graph.py`, `frontend/src/App.jsx`,
+  `frontend/src/context/AuthContext.jsx`, `frontend/src/pages/Dashboard.jsx`,
+  `PROGRESS.md`, `progress/krish.md`
+
+**For Rishabh**
+- **Run `python dev_users.py && python dev_data.py`** after pulling, or your
+  graph will be empty.
+- `dev_data.py` is mine and throwaway - delete it when `seed.py` lands rather
+  than building on it.
+- The scoping consequence is now visible: a shared entity can show with no
+  edges. Say if you disagree, it changes the demo.
+
+---
+
 ### 2026-09-29 · W2 F3a `graph.py` · `w2-graph-krish`
 
 Started Week 2 with W1-9 still outstanding and eight commits unmerged. That is

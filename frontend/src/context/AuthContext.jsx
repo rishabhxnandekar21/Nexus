@@ -4,17 +4,26 @@ import client, { TOKEN_KEY } from '../api/client'
 
 const AuthContext = createContext(null)
 
+function storedToken() {
+  // localStorage throws in a private window with site data blocked. No token
+  // is the right answer there, not a crash on first paint.
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  // Starts true: on a refresh we hold a token but not yet a user, and routing
-  // before /auth/me answers would bounce a logged-in user to the login page.
-  const [loading, setLoading] = useState(true)
+  // Derived, not corrected in an effect: we are only "loading" if there is a
+  // token whose user still has to be resolved. On a refresh we hold a token
+  // but not yet a user, and routing before /auth/me answers would bounce a
+  // logged-in user to the login page.
+  const [loading, setLoading] = useState(() => Boolean(storedToken()))
 
   useEffect(() => {
-    if (!localStorage.getItem(TOKEN_KEY)) {
-      setLoading(false)
-      return
-    }
+    if (!storedToken()) return
     // The token survives a refresh; the user object does not. Re-resolve it
     // from the server rather than trusting anything cached in the browser.
     client
@@ -46,6 +55,11 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// The hook ships beside its provider deliberately. Splitting it would need a
+// third file to hold the context object, and CLAUDE.md Section 4 names one
+// AuthContext.jsx. The only cost is that editing this file does a full reload
+// in dev instead of a hot one.
+// oxlint-disable-next-line react/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) {

@@ -37,10 +37,10 @@ function Shell({ children }) {
   return (
     <div className="min-h-screen bg-slate-900">
       <header className="border-b border-slate-700 bg-slate-800">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
           <span className="font-semibold text-white">CrimeNet AI</span>
 
-          <nav className="flex gap-1">
+          <nav className="flex flex-wrap gap-1">
             {NAV.map((item) => (
               <NavLink
                 key={item.to}
@@ -59,13 +59,17 @@ function Shell({ children }) {
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-3 text-sm">
-            <span className="text-slate-300">
-              {user.username}
-              <span className="ml-2 rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
+          {/* ml-auto pushes this right when it fits; flex-wrap on the row and
+              here lets it drop to its own line instead of overflowing the
+              header, which clipped the agency badge and the logout button at
+              tablet width. */}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 text-sm">
+            <span className="flex flex-wrap items-center gap-1.5 text-slate-300">
+              <span className="truncate">{user.username}</span>
+              <span className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
                 {user.role}
               </span>
-              <span className="ml-1 rounded bg-sky-900 px-2 py-0.5 text-xs text-sky-200">
+              <span className="rounded bg-sky-900 px-2 py-0.5 text-xs text-sky-200">
                 {user.agency_code}
               </span>
             </span>

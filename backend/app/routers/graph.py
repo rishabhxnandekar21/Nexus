@@ -25,10 +25,6 @@ from app.schemas import (
     AnalyticsResponse,
     BetweennessShift,
     ComponentStats,
-    GraphEdge,
-    GraphEdgeData,
-    GraphNode,
-    GraphNodeData,
     GraphResponse,
     NodeMetrics,
     PathResponse,
@@ -41,7 +37,9 @@ from app.schemas import (
 
 router = APIRouter(prefix="/api/graph", tags=["graph"])
 
-NODE_CAP = 500
+# The node cap lives in graph.py, which is the only thing that applies it. It
+# was duplicated here while GET /api/graph was a stub; two copies of a limit
+# are two copies that can drift apart.
 
 # Hand-set centrality for the stub. Real values come from NetworkX in W2 - these
 # are here so the UI has something to size and colour nodes by, not as a claim

@@ -10,6 +10,7 @@ stronger check than eyeballing a dashboard full of seeded records.
 from datetime import date
 
 import pytest
+from sqlalchemy import delete
 
 from app.graph import NODE_CAP, build_graph, can_see_entity, to_cytoscape
 from app.models import Agency, Entity, Relationship, User
@@ -179,10 +180,25 @@ def test_truncation_flags_itself(db, world, monkeypatch):
 
 
 def test_empty_database_is_an_empty_graph_not_an_error(db):
-    """Today's live behaviour, until seed.py lands."""
-    user = User(username="t_nobody", password_hash="x", role="admin", agency_id=1)
+    """An empty database must give an empty graph, not an exception.
+
+    Clears the tables inside the rolled-back transaction rather than assuming
+    the database happens to be empty - it was not, once dev_data.py existed,
+    and a test that passes only because of ambient state is worse than no test.
+    """
+    agency = Agency(name="Nowhere", code="T_EMPTY")
+    db.add(agency)
+    db.flush()
+    db.execute(delete(Relationship))
+    db.execute(delete(Entity))
+    db.flush()
+
+    user = User(
+        username="t_nobody", password_hash="x", role="admin", agency_id=agency.id
+    )
     graph = build_graph(db, user)
     assert graph.number_of_nodes() == 0
+    assert graph.number_of_edges() == 0
     assert graph.graph["truncated"] is False
 
 

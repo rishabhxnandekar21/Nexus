@@ -27,7 +27,7 @@
 | W1 | Router stubs returning fake data | Both | 🔵 in review | w1-7-stubs-krish | — | Krish's 8 routes live; 16/16 checks incl. 403 |
 | W1 | Frontend shell, AuthContext, login | Both | 🔵 in review | w1-8-frontend-krish | — | login, nav badges, refresh, logout - all live |
 | W2 | F7 `seed.py` + 3 scenarios | Rishabh | ⬜ not started | — | — | — |
-| W2 | F3a `graph.py` + `/api/graph` | Krish | 🔵 in review | w2-graph-krish | — | 25/25 pytest; S2 asserted on test rows |
+| W2 | F3a `graph.py` + `/api/graph` | Krish | 🔵 in review | w2-graph-krish | — | 25/25 pytest; live investigator 10/9 vs admin 12/14 |
 | W3 | F3b GraphView, panel, search | Krish | ⬜ not started | — | — | — |
 | W3 | F8a resolution scoring + endpoints | Rishabh | ⬜ not started | — | — | — |
 | W3 | F2 audit log page + verify button | Rishabh | ⬜ not started | — | — | — |
@@ -75,6 +75,7 @@ an existing line.
 | 2026-09-29 | Krish | audit.py | W1-5. New shared `app/audit.py`: `compute_hash`, `write_audit`, `verify_chain`, `chain_length`, and an `audited()` route dependency. Payload string is CLAUDE.md Section 5 verbatim. `write_audit` flushes but does not commit - the caller owns the transaction. My 8 W1-7 routes now use `audited(...)` in place of `get_current_user`. **`routers/audit.py` is untouched and still Rishabh's**, so `GET /api/audit` and `/api/audit/verify` do not exist yet. | no |
 | 2026-09-29 | Krish | CLAUDE.md | Team name in Section 1 changed from `Delulu Developers` to `Apostrophe`, to match Rishabh's README edit of 27 Sep. The two documents had disagreed since then. | no |
 | 2026-09-29 | Krish | graph.py, routers/graph.py | W2 F3a. New `app/graph.py` with `build_graph()`, `can_see_entity()` and `to_cytoscape()`. `GET /api/graph` now reads Postgres instead of the fake set - **it returns an empty graph until `seed.py` runs, which is correct, not a failure.** The other four graph routes and all of `routers/entities.py` are still stubs. | no |
+| 2026-09-29 | Krish | dev_data.py | W2 F3a verification. New **temporary** `backend/dev_data.py` loads the 12 stub records into Postgres so the W2 exit criterion can actually be checked - both tokens returned an empty graph before it. **It is not `seed.py` and does not pretend to be**: no scenarios, no volumes, no determinism, no `--reset`/`--verify`. It reads its rows from `routers/entities.py`, so there is one copy of the fake network. Delete it with the stubs when F7 lands. | yes - `python dev_users.py && python dev_data.py` |
 
 ---
 
