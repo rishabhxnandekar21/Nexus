@@ -11,7 +11,7 @@
 >   `progress/rishabh.md`.
 
 **Current phase:** Week 1 — Foundation (both)
-**Last updated:** 2026-09-28
+**Last updated:** 2026-09-29
 
 ---
 
@@ -19,12 +19,12 @@
 
 | Phase | Feature | Owner | Status | Branch | PR | Verified |
 |---|---|---|---|---|---|---|
-| W1 | Repo, scaffold, Docker Postgres | Both | 🔵 in review | phase-0-scaffold-rishabh | — | `/api/health` ok, db connected |
-| W1 | `models.py` — all six tables | Both | 🔵 in review | phase-0-scaffold-rishabh | — | 6 tables + 5 indexes in psql |
-| W1 | `auth.py` — JWT + roles | Both | 🔵 in review | phase-2-auth-rishabh | — | 18/18 checks: login, /me, 401s, 403 |
+| W1 | Repo, scaffold, Docker Postgres | Both | ✅ done | phase-0-scaffold-rishabh | #1 | `/api/health` ok, db connected |
+| W1 | `models.py` — all six tables | Both | ✅ done | phase-0-scaffold-rishabh | #1 | 6 tables + 5 indexes in psql |
+| W1 | `auth.py` — JWT + roles | Both | ✅ done | phase-2-auth-rishabh | #1 | 18/18 checks: login, /me, 401s, 403 |
 | W1 | `audit.py` — hash chain + pytest | Both | ⬜ not started | — | — | — |
-| W1 | `schemas.py` — all contracts | Both | ⬜ not started | — | — | — |
-| W1 | Router stubs returning fake data | Both | ⬜ not started | — | — | — |
+| W1 | `schemas.py` — all contracts | Both | 🟡 in progress | w1-6-schemas-krish | — | — |
+| W1 | Router stubs returning fake data | Both | ⬜ not started | w1-7-stubs-krish (claimed) | — | — |
 | W1 | Frontend shell, AuthContext, login | Both | ⬜ not started | — | — | — |
 | W2 | F7 `seed.py` + 3 scenarios | Rishabh | ⬜ not started | — | — | — |
 | W2 | F3a `graph.py` + `/api/graph` | Krish | ⬜ not started | — | — | — |
@@ -78,7 +78,20 @@ your own heading. Delete your own entries once resolved.
 
 ### From Krish
 
-*(none)*
+- **`pytest` is not in `requirements.txt`.** You flagged this twice and I never
+  answered - sorry. Yes, add it. `CLAUDE.md` Section 8 requires
+  `tests/test_audit.py`, so the dependency is already implied by the plan. Its own
+  commit, per Section 5.4.
+- **Who stubs `routers/audit.py`, `routers/resolution.py` and `routers/query.py`?**
+  W1-7 says "every endpoint", but those three are yours in the ownership table and
+  routers are not in the `PRD.md` Section 11 "built jointly in Week 1" list. I am
+  doing `routers/graph.py` and `routers/entities.py` only and will not touch the
+  other three until we agree.
+- **`.env.example` should probably move to 5433.** You left it at 5432 because the
+  native-Postgres clash looked machine-local. It is not - this machine runs
+  `postgresql-x64-17` on 5432 and hit exactly the same shadowing. Both of us are
+  now on 5433, so the committed example is the odd one out. Your call, it is your
+  find.
 
 ### From Rishabh
 
