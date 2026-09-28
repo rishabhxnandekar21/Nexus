@@ -22,7 +22,7 @@
 | W1 | Repo, scaffold, Docker Postgres | Both | ✅ done | phase-0-scaffold-rishabh | #1 | `/api/health` ok, db connected |
 | W1 | `models.py` — all six tables | Both | ✅ done | phase-0-scaffold-rishabh | #1 | 6 tables + 5 indexes in psql |
 | W1 | `auth.py` — JWT + roles | Both | ✅ done | phase-2-auth-rishabh | #1 | 18/18 checks: login, /me, 401s, 403 |
-| W1 | `audit.py` — hash chain + pytest | Both | 🟡 in progress | w1-5-audit-krish | — | — |
+| W1 | `audit.py` — hash chain + pytest | Both | 🔵 in review | w1-5-audit-krish | — | 7/7 pytest; tamper detected at exact seq |
 | W1 | `schemas.py` — all contracts | Both | 🔵 in review | w1-6-schemas-krish | — | 34 models; 26 now in /docs, 8 await Rishabh's routers |
 | W1 | Router stubs returning fake data | Both | 🔵 in review | w1-7-stubs-krish | — | Krish's 8 routes live; 16/16 checks incl. 403 |
 | W1 | Frontend shell, AuthContext, login | Both | 🔵 in review | w1-8-frontend-krish | — | login, nav badges, refresh, logout - all live |
@@ -71,6 +71,9 @@ an existing line.
 | 2026-09-29 | Krish | schemas.py | W1-6. Added 31 models to `schemas.py`, 34 total - every contract in CLAUDE.md Section 6. Rishabh's three auth models are untouched. `EntityType`/`UserRole`/`ResolutionStatus` are StrEnums derived from the tuples in `models.py`, used on requests only. Cytoscape ids are strings, deliberately. `ResolutionFeature` and `NLQueryFilters` are proposed shapes for Rishabh's JSONB and LLM filters - his to change. | no |
 | 2026-09-29 | Krish | main.py | W1-7. `main.py` gained 3 lines: `entities` and `graph` added to the routers import, and two `include_router` calls. Nothing else in that file touched. New `routers/entities.py` and `routers/graph.py` are stubs over 12 fake records - no database access. **Not audited**: `audit.py` does not exist yet (W1-5), so the stub routes are protected but not logged. Must be revisited when W1-5 lands. | no |
 | 2026-09-29 | Krish | package.json | W1-8. New `frontend/package.json`. **React pinned to 18**, not the 19 the Vite template now ships: `CLAUDE.md` Section 3 says React 18, and `react-cytoscapejs` 2.0.0 does not declare React 19 support - that is Krish's W3 graph canvas, so it is not worth the risk. Vite 8, Tailwind v4 via `@tailwindcss/vite` with no config file, plus `react-router-dom`, `axios`, `cytoscape`, `react-cytoscapejs`. Nothing beyond the Section 3 list. | no |
+| 2026-09-29 | Krish | requirements.txt | W1-5. Added `pytest`, in its own commit per TEAM-WORKFLOW 5.4. Answers Rishabh's W1-4 question - CLAUDE.md Section 8 requires `tests/test_audit.py`, so it was implied by the plan even though Section 3 omits it. | no |
+| 2026-09-29 | Krish | audit.py | W1-5. New shared `app/audit.py`: `compute_hash`, `write_audit`, `verify_chain`, `chain_length`, and an `audited()` route dependency. Payload string is CLAUDE.md Section 5 verbatim. `write_audit` flushes but does not commit - the caller owns the transaction. My 8 W1-7 routes now use `audited(...)` in place of `get_current_user`. **`routers/audit.py` is untouched and still Rishabh's**, so `GET /api/audit` and `/api/audit/verify` do not exist yet. | no |
+| 2026-09-29 | Krish | CLAUDE.md | Team name in Section 1 changed from `Delulu Developers` to `Apostrophe`, to match Rishabh's README edit of 27 Sep. The two documents had disagreed since then. | no |
 
 ---
 

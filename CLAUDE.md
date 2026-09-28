@@ -59,7 +59,7 @@ time.
 
 Reference brief: Smart India Hackathon 2026, Problem Statement **26189**
 (AI-Powered Criminal Network Analysis System), theme *Blockchain &
-Cybersecurity*. Team: **Delulu Developers**.
+Cybersecurity*. Team: **Apostrophe**.
 
 ### The five things the demo must show
 

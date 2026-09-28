@@ -15,7 +15,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.auth import get_current_user
+from app.audit import audited
 from app.models import User
 from app.routers.entities import _BY_ID, _ENTITIES, _RELATIONSHIPS
 from app.schemas import (
@@ -137,7 +137,7 @@ def get_graph(
     date_from: date | None = Query(default=None, alias="from"),
     date_to: date | None = Query(default=None, alias="to"),
     types: str | None = Query(default=None, description="comma-separated entity types"),
-    user: User = Depends(get_current_user),
+    user: User = Depends(audited("read", "graph")),
 ) -> GraphResponse:
     """STUB. Cytoscape elements for the fake network. Ids are strings, per schemas.py."""
     nodes, edges = _select(center, depth, date_from, date_to, types)
@@ -174,7 +174,7 @@ def get_graph(
 def get_analytics(
     center: int | None = Query(default=None),
     depth: int = Query(default=2, ge=1, le=3),
-    user: User = Depends(get_current_user),
+    user: User = Depends(audited("analytics", "graph")),
 ) -> AnalyticsResponse:
     """STUB. Per-node centrality and communities. Real NetworkX values in W4."""
     nodes, edges = _select(center, depth, None, None, None)
@@ -202,7 +202,7 @@ def get_analytics(
 def get_path(
     from_id: int = Query(alias="from"),
     to_id: int = Query(alias="to"),
-    user: User = Depends(get_current_user),
+    user: User = Depends(audited("path", "graph")),
 ) -> PathResponse:
     """STUB. Breadth-first shortest path over the fake edges."""
     for node_id in (from_id, to_id):
@@ -251,7 +251,7 @@ def get_path(
 @router.post("/whatif", response_model=WhatIfResponse)
 def what_if(
     payload: WhatIfRequest,
-    user: User = Depends(get_current_user),
+    user: User = Depends(audited("whatif", "graph")),
 ) -> WhatIfResponse:
     """STUB. Network impact simulation - never crime prediction, per PRD N1.
 
@@ -327,7 +327,7 @@ def what_if(
 def predict_links(
     entity_id: int = Query(),
     k: int = Query(default=5, ge=1, le=20),
-    user: User = Depends(get_current_user),
+    user: User = Depends(audited("predict", "graph")),
 ) -> PredictionResponse:
     """STUB. Likely-but-absent links, ranked by shared neighbours.
 

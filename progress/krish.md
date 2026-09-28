@@ -3,6 +3,89 @@
 > Only Krish writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-29 · W1-5 audit.py + hash chain · `w1-5-audit-krish`
+
+**Rishabh - read the first bullet before anything else.**
+
+- **I took W1-5, which your 09-28 log named as your next task.** Nothing had
+  been pushed in two days and unpushed work is invisible (TEAM-WORKFLOW 1), it
+  was unclaimed in the `PROGRESS.md` table, `app/audit.py` is *Shared - protocol
+  required* rather than exclusively yours, and it was blocking my own W1-7
+  routes, which were protected but unlogged. Same reasoning you used for taking
+  W1-2 and W1-3. Claimed on `main` and pushed before writing a line. **If you
+  have a local copy, say so and I will drop mine** - two implementations of the
+  one file whose failure is invisible is the worst possible thing to duplicate.
+
+**Done**
+- `app/audit.py` - `compute_hash`, `write_audit`, `verify_chain`, `chain_length`
+  and an `audited()` route dependency
+- `tests/test_audit.py` + `tests/conftest.py` - 7 tests
+- `pytest` added to `requirements.txt`, own commit
+- My 8 W1-7 routes now take `Depends(audited(...))` instead of
+  `Depends(get_current_user)`, closing the gap I flagged in that entry
+
+**Decisions**
+- **The payload string is CLAUDE.md Section 5 verbatim** and the module says so
+  in a comment. Reordering a field or changing a separator would leave
+  `audit.py` self-consistent while silently invalidating every row ever written,
+  so `test_payload_format_matches_the_specification` rebuilds the string from
+  the spec independently and fails if the two ever diverge.
+- **`write_audit` flushes, it does not commit.** The caller owns the
+  transaction. That is what lets the whole test suite run inside one rollback
+  against the ordinary dev database without leaving rows in an append-only
+  table. The `audited()` dependency commits, so a route that later 500s still
+  leaves its access logged - the log is of attempts, not successes.
+- **A transaction-scoped advisory lock guards the `max(seq)` read.** Two
+  concurrent audited requests would otherwise compute the same `seq` and either
+  collide on the unique constraint or fork the chain. Not theoretical: the
+  dashboard already fires more than one request at a time.
+- **Timestamps are naive UTC set in Python**, per the decision in `models.py`.
+  A test asserts it, because a tz-aware value would render differently on your
+  machine and break the chain in a way nothing on screen would show.
+
+**Verified**
+- `pytest tests/` - **7 passed**: five-row chain valid; row 3 `details` edited
+  -> `broken_at_seq 3`; row 3 edited *and its hash recomputed* -> still caught,
+  at seq 4, because row 4 still carries the old `prev_hash`; a row deleted from
+  the middle -> caught; empty chain valid; payload format pinned to the spec;
+  timestamps naive UTC.
+- **S4 proven end to end against real rows.** Eight routes exercised, chain
+  valid over 8 rows. `update audit_log set action='deleted_evidence' where
+  seq=5` in psql -> `{'valid': False, 'broken_at_seq': 5, 'checked': 5}`.
+  Restored the row -> valid again.
+- Correct users logged (investigator 1, admin 2) and the path param captured as
+  `resource_id`. **401 and 403 attempts write no row**, because the dependency
+  resolves the user before it logs.
+- Full 8-route regression unchanged, chain still valid at 13 rows.
+
+**Not done, deliberately**
+- **`routers/audit.py` is yours and I did not create it**, so `GET /api/audit`
+  and `GET /api/audit/verify` still do not exist. Tamper detection is proven at
+  the library level only. Wire `verify_chain(db)` to the endpoint and F2 is
+  finished; the function returns exactly the `{valid, broken_at_seq, checked}`
+  shape `VerifyResponse` already declares.
+
+**Files touched**
+- `backend/app/audit.py` (new), `backend/tests/test_audit.py` (new),
+  `backend/tests/conftest.py` (new), `backend/requirements.txt`,
+  `backend/app/routers/entities.py`, `backend/app/routers/graph.py`,
+  `CLAUDE.md` (team name), `PROGRESS.md`, `progress/krish.md`
+
+**Next**
+- W1-9 foundation review, which needs both of us. Nothing else in Week 1 is mine.
+
+**For Rishabh**
+- `audited("action", "resource_type")` replaces `Depends(get_current_user)` on a
+  route; add `admin=True` for admin-only. Use it on your three routers so the
+  logging stays uniform.
+- `pytest` is in `requirements.txt` - `pip install -r requirements.txt` again.
+- `tests/conftest.py` gives you a `db` fixture that rolls back, if you ever want
+  a second test.
+- I changed the team name in `CLAUDE.md` Section 1 to `Apostrophe` so it matches
+  the README you edited on the 27th.
+
+---
+
 ### 2026-09-29 · W1-8 frontend shell · `w1-8-frontend-krish`
 
 Claimed on `main` first, then branched. Stacked on `w1-7-stubs-krish` rather

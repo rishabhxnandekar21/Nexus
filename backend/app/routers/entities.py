@@ -13,7 +13,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user, require_admin
+from app.audit import audited
 from app.database import get_db
 from app.models import Agency, User
 from app.schemas import (
@@ -149,7 +149,7 @@ def search_entities(
     type: str | None = Query(default=None, description="filter by entity_type"),
     q: str | None = Query(default=None, description="case-insensitive partial name match"),
     limit: int = Query(default=50, ge=1, le=500),
-    user: User = Depends(get_current_user),
+    user: User = Depends(audited("search", "entity")),
 ) -> list[EntitySearchResult]:
     """STUB. Filters the twelve fake records so the search box behaves realistically."""
     rows = _ENTITIES
@@ -164,7 +164,7 @@ def search_entities(
 @router.get("/{entity_id}", response_model=EntityDetailOut)
 def get_entity(
     entity_id: int,
-    user: User = Depends(get_current_user),
+    user: User = Depends(audited("read", "entity")),
 ) -> EntityDetailOut:
     """STUB. The record plus every edge touching it and the neighbours they reach."""
     entity = _BY_ID.get(entity_id)
@@ -185,7 +185,7 @@ def get_entity(
 @router.post("", response_model=EntityOut, status_code=status.HTTP_201_CREATED)
 def create_entity(
     payload: EntityCreate,
-    user: User = Depends(require_admin),
+    user: User = Depends(audited("create", "entity", admin=True)),
     db: Session = Depends(get_db),
 ) -> EntityOut:
     """STUB. Admin only - the first route to use require_admin over HTTP.
