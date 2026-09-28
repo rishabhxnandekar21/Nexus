@@ -28,7 +28,7 @@
 | W1 | Frontend shell, AuthContext, login | Both | 🔵 in review | w1-8-frontend-krish | — | login, nav badges, refresh, logout - all live |
 | W2 | F7 `seed.py` + 3 scenarios | Rishabh | ⬜ not started | — | — | — |
 | W2 | F3a `graph.py` + `/api/graph` | Krish | 🔵 in review | w2-graph-krish | — | 25/25 pytest; live investigator 10/9 vs admin 12/14 |
-| W3 | F3b GraphView, panel, search | Krish | ⬜ not started | — | — | — |
+| W3 | F3b GraphView, panel, search | Krish | 🟡 in progress | w3-graphview-krish | — | — |
 | W3 | F8a resolution scoring + endpoints | Rishabh | ⬜ not started | — | — | — |
 | W3 | F2 audit log page + verify button | Rishabh | ⬜ not started | — | — | — |
 | W4 | F8b resolution review UI + merge | Rishabh | ⬜ not started | — | — | — |
