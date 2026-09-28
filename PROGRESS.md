@@ -25,7 +25,7 @@
 | W1 | `audit.py` — hash chain + pytest | Both | ⬜ not started | — | — | — |
 | W1 | `schemas.py` — all contracts | Both | 🔵 in review | w1-6-schemas-krish | — | 34 models; 26 now in /docs, 8 await Rishabh's routers |
 | W1 | Router stubs returning fake data | Both | 🔵 in review | w1-7-stubs-krish | — | Krish's 8 routes live; 16/16 checks incl. 403 |
-| W1 | Frontend shell, AuthContext, login | Both | ⬜ not started | — | — | — |
+| W1 | Frontend shell, AuthContext, login | Both | 🟡 in progress | w1-8-frontend-krish | — | — |
 | W2 | F7 `seed.py` + 3 scenarios | Rishabh | ⬜ not started | — | — | — |
 | W2 | F3a `graph.py` + `/api/graph` | Krish | ⬜ not started | — | — | — |
 | W3 | F3b GraphView, panel, search | Krish | ⬜ not started | — | — | — |
