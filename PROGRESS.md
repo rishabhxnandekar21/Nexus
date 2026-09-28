@@ -23,7 +23,7 @@
 | W1 | `models.py` — all six tables | Both | ✅ done | phase-0-scaffold-rishabh | #1 | 6 tables + 5 indexes in psql |
 | W1 | `auth.py` — JWT + roles | Both | ✅ done | phase-2-auth-rishabh | #1 | 18/18 checks: login, /me, 401s, 403 |
 | W1 | `audit.py` — hash chain + pytest | Both | ⬜ not started | — | — | — |
-| W1 | `schemas.py` — all contracts | Both | 🟡 in progress | w1-6-schemas-krish | — | — |
+| W1 | `schemas.py` — all contracts | Both | 🔵 in review | w1-6-schemas-krish | — | 34 models import clean; /docs pending W1-7 |
 | W1 | Router stubs returning fake data | Both | ⬜ not started | w1-7-stubs-krish (claimed) | — | — |
 | W1 | Frontend shell, AuthContext, login | Both | ⬜ not started | — | — | — |
 | W2 | F7 `seed.py` + 3 scenarios | Rishabh | ⬜ not started | — | — | — |
@@ -68,6 +68,7 @@ an existing line.
 | 2026-09-27 | Rishabh | CLAUDE.md | Section 4 tree only: added `analysis.py`, `backend/tests/test_audit.py`, `pages/Stats.jsx`, `components/AnalysisPanel.jsx`. All four are in the PRD Section 11 ownership table but were missing from the tree. Also created `backend/app/` and `backend/app/routers/` with empty `__init__.py`. | no |
 | 2026-09-28 | Rishabh | requirements.txt, models.py, main.py | W1-2 + W1-3. `requirements.txt` = the 13 deps in CLAUDE.md Section 3, nothing added. New `config.py`, `database.py` (Base, engine, SessionLocal, get_db, init_db), `main.py` (CORS for :5173 + GET /api/health), `models.py` (all six tables, the five required indexes, CHECK constraints on role/entity_type/status). | yes - run `python -c "from app.database import init_db; init_db()"` |
 | 2026-09-28 | Rishabh | schemas.py, auth.py, main.py, .env.example | W1-4. New `auth.py` (bcrypt direct + PyJWT, `get_current_user`, `require_admin`). New `schemas.py` with ONLY `UserOut`, `LoginRequest`, `TokenResponse` - **W1-6 should add the remaining ~17 models to this file, not recreate it.** `main.py` gained two lines mounting the auth router. `.env.example` gained a comment about minimum JWT_SECRET length. | no |
+| 2026-09-29 | Krish | schemas.py | W1-6. Added 31 models to `schemas.py`, 34 total - every contract in CLAUDE.md Section 6. Rishabh's three auth models are untouched. `EntityType`/`UserRole`/`ResolutionStatus` are StrEnums derived from the tuples in `models.py`, used on requests only. Cytoscape ids are strings, deliberately. `ResolutionFeature` and `NLQueryFilters` are proposed shapes for Rishabh's JSONB and LLM filters - his to change. | no |
 
 ---
 
