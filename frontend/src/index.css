@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+/* Tailwind v4 needs no config file - the @tailwindcss/vite plugin in
+   vite.config.js does the work. Anything project-wide goes in @theme. */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-slate-900);
+}

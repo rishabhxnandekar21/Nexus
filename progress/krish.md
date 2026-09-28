@@ -3,6 +3,78 @@
 > Only Krish writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-29 · W1-8 frontend shell · `w1-8-frontend-krish`
+
+Claimed on `main` first, then branched. Stacked on `w1-7-stubs-krish` rather
+than `main`, because the shell has nothing real to call without the stub
+routers - one PR carries W1-6, W1-7 and W1-8.
+
+**Done**
+- Vite + React scaffold, Tailwind v4 through `@tailwindcss/vite`, no config file
+- `vite.config.js` with the `/api` proxy to `localhost:8000`
+- `api/client.js` - axios on a relative `/api` baseURL, request interceptor
+  attaching the bearer token, response interceptor clearing it and redirecting
+  on 401
+- `context/AuthContext.jsx` - `user`, `loading`, `login`, `logout`
+- `pages/Login.jsx`, `pages/Dashboard.jsx`, nav shell with routing in `App.jsx`
+
+**Decisions**
+- **React pinned to 18.** The Vite template now scaffolds React 19, but
+  `CLAUDE.md` Section 3 says React 18 and `react-cytoscapejs` 2.0.0 does not
+  declare React 19 support. That library is my W3 graph canvas and the centre of
+  the whole demo; taking a peer-dependency gamble on it to be three months
+  newer is a bad trade. Everything installed with zero peer warnings.
+- **The login call opts out of the 401 redirect** via a `skipAuthRedirect`
+  flag. Without it a wrong password triggers the global handler and blanks the
+  form the user is typing into, instead of showing "incorrect password".
+- **`AuthContext.loading` starts `true`** and the router waits on it. A refresh
+  holds a token but no user yet, so routing before `/auth/me` answers would
+  bounce a perfectly logged-in user to the login page.
+- **The axios baseURL is relative.** Nothing hardcodes `localhost:8000`; the
+  Vite proxy handles dev, and there is no build-time URL to change later.
+- **Dashboard actually calls `GET /api/graph`** rather than rendering a static
+  box. That is what proves the chain - proxy, interceptor, protected route,
+  stub router - is genuinely wired rather than looking wired.
+
+**Ownership**
+- `pages/Resolution.jsx`, `AuditLog.jsx` and `Stats.jsx` are Rishabh's, so I did
+  **not** create them. Their routes point at one `components/Placeholder.jsx`
+  that I own. When he writes a page he adds the file and swaps one line in
+  `App.jsx`.
+
+**Verified live in a browser, against the real backend**
+
+| Criterion | Result |
+|---|---|
+| log in through the UI | investigator and admin both land on the app |
+| name, role and agency in the nav | `investigator` / `investigator` / `GJ_POLICE`, and `admin` / `admin` / `GJ_POLICE` |
+| refreshing keeps you logged in | hard reload on `/audit` stays on `/audit`, no flash of the login page |
+| logout clears the token | `localStorage` empty, redirected to `/login` |
+| wrong password | inline "Incorrect username or password", stays on the form |
+| deep link while logged out | `/stats` bounces to login, then returns to `/stats` after signing in |
+| unknown route | redirects to the dashboard |
+| the chain is real | Dashboard shows 12 nodes / 14 edges fetched through the proxy |
+
+**Files touched**
+- `frontend/` (new - 16 files), `PROGRESS.md`, `progress/krish.md`
+
+**Next**
+- W1-9 foundation review. My side of Week 1 is finished.
+
+**For Rishabh**
+- **`package.json` exists and React is 18, deliberately.** Please do not bump it
+  to 19 without checking `react-cytoscapejs` first.
+- **Your three pages are not created.** Add `pages/Resolution.jsx`,
+  `AuditLog.jsx`, `Stats.jsx` when you build them and swap the matching line in
+  `App.jsx` - the routes, nav entries and auth guard already work.
+- `useAuth()` from `context/AuthContext` gives you `user`, `loading`, `login`,
+  `logout`. `client` from `api/client` already attaches the token; just call
+  `client.get('/audit')` and do not add your own axios instance.
+- Run the frontend with `npm install` then `npm run dev` in `frontend/`. It needs
+  the backend on port 8000 and `python dev_users.py` to have been run.
+
+---
+
 ### 2026-09-29 · review fixes on W1-7 · `w1-7-stubs-krish`
 
 Self-review of the two stub routers before the PR. Four findings, all four fixed

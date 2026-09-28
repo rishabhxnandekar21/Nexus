@@ -25,7 +25,7 @@
 | W1 | `audit.py` — hash chain + pytest | Both | ⬜ not started | — | — | — |
 | W1 | `schemas.py` — all contracts | Both | 🔵 in review | w1-6-schemas-krish | — | 34 models; 26 now in /docs, 8 await Rishabh's routers |
 | W1 | Router stubs returning fake data | Both | 🔵 in review | w1-7-stubs-krish | — | Krish's 8 routes live; 16/16 checks incl. 403 |
-| W1 | Frontend shell, AuthContext, login | Both | 🟡 in progress | w1-8-frontend-krish | — | — |
+| W1 | Frontend shell, AuthContext, login | Both | 🔵 in review | w1-8-frontend-krish | — | login, nav badges, refresh, logout - all live |
 | W2 | F7 `seed.py` + 3 scenarios | Rishabh | ⬜ not started | — | — | — |
 | W2 | F3a `graph.py` + `/api/graph` | Krish | ⬜ not started | — | — | — |
 | W3 | F3b GraphView, panel, search | Krish | ⬜ not started | — | — | — |
@@ -70,6 +70,7 @@ an existing line.
 | 2026-09-28 | Rishabh | schemas.py, auth.py, main.py, .env.example | W1-4. New `auth.py` (bcrypt direct + PyJWT, `get_current_user`, `require_admin`). New `schemas.py` with ONLY `UserOut`, `LoginRequest`, `TokenResponse` - **W1-6 should add the remaining ~17 models to this file, not recreate it.** `main.py` gained two lines mounting the auth router. `.env.example` gained a comment about minimum JWT_SECRET length. | no |
 | 2026-09-29 | Krish | schemas.py | W1-6. Added 31 models to `schemas.py`, 34 total - every contract in CLAUDE.md Section 6. Rishabh's three auth models are untouched. `EntityType`/`UserRole`/`ResolutionStatus` are StrEnums derived from the tuples in `models.py`, used on requests only. Cytoscape ids are strings, deliberately. `ResolutionFeature` and `NLQueryFilters` are proposed shapes for Rishabh's JSONB and LLM filters - his to change. | no |
 | 2026-09-29 | Krish | main.py | W1-7. `main.py` gained 3 lines: `entities` and `graph` added to the routers import, and two `include_router` calls. Nothing else in that file touched. New `routers/entities.py` and `routers/graph.py` are stubs over 12 fake records - no database access. **Not audited**: `audit.py` does not exist yet (W1-5), so the stub routes are protected but not logged. Must be revisited when W1-5 lands. | no |
+| 2026-09-29 | Krish | package.json | W1-8. New `frontend/package.json`. **React pinned to 18**, not the 19 the Vite template now ships: `CLAUDE.md` Section 3 says React 18, and `react-cytoscapejs` 2.0.0 does not declare React 19 support - that is Krish's W3 graph canvas, so it is not worth the risk. Vite 8, Tailwind v4 via `@tailwindcss/vite` with no config file, plus `react-router-dom`, `axios`, `cytoscape`, `react-cytoscapejs`. Nothing beyond the Section 3 list. | no |
 
 ---
 
