@@ -16,7 +16,21 @@ export default function Dashboard() {
     client
       .get('/graph', { params: { depth: 2 } })
       .then((response) => {
-        if (!cancelled) setState({ status: 'ready', data: response.data, error: '' })
+        if (cancelled) return
+        // A 200 is not proof of the right body. If the dev proxy is
+        // misconfigured or restarting, Vite answers /api/* with index.html and
+        // axios reports success - reading .nodes off that threw and blanked
+        // the whole page. Check the shape before trusting it.
+        const data = response.data
+        if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+          setState({
+            status: 'error',
+            data: null,
+            error: 'The server returned an unexpected response. Is the /api proxy up?',
+          })
+          return
+        }
+        setState({ status: 'ready', data, error: '' })
       })
       .catch((err) => {
         if (!cancelled) {
@@ -47,16 +61,26 @@ export default function Dashboard() {
       )}
 
       {state.status === 'ready' && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Stat label="Nodes" value={state.data.nodes.length} />
-          <Stat label="Edges" value={state.data.edges.length} />
-          <Stat label="Depth" value={state.data.depth} />
-        </div>
+        <>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Stat label="Nodes" value={state.data.nodes.length} />
+            <Stat label="Edges" value={state.data.edges.length} />
+            <Stat label="Depth" value={state.data.depth} />
+          </div>
+          {state.data.nodes.length === 0 && (
+            <div className="rounded-lg border border-dashed border-slate-600 bg-slate-800/50 p-8 text-center">
+              <p className="text-sm text-slate-400">
+                No entities visible yet. The graph endpoint is real as of W2 — the
+                database is simply empty until seed.py runs.
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       <p className="text-xs text-slate-500">
-        Stub data. Real rows arrive with seed.py in Week 2, and agency scoping with
-        build_graph() alongside it — today an investigator and an admin see the same graph.
+        Live data, agency-scoped by build_graph(). Counts stay at zero until seed.py
+        populates the database.
       </p>
     </div>
   )

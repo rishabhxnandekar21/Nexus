@@ -14,8 +14,11 @@ results. That is S2, the core demo moment, and it needs real rows - W2.
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
 
 from app.audit import audited
+from app.database import get_db
+from app.graph import build_graph, can_see_entity, to_cytoscape
 from app.models import User
 from app.routers.entities import _BY_ID, _ENTITIES, _RELATIONSHIPS
 from app.schemas import (
@@ -138,35 +141,36 @@ def get_graph(
     date_to: date | None = Query(default=None, alias="to"),
     types: str | None = Query(default=None, description="comma-separated entity types"),
     user: User = Depends(audited("read", "graph")),
+    db: Session = Depends(get_db),
 ) -> GraphResponse:
-    """STUB. Cytoscape elements for the fake network. Ids are strings, per schemas.py."""
-    nodes, edges = _select(center, depth, date_from, date_to, types)
-    truncated = len(nodes) > NODE_CAP
-    nodes = nodes[:NODE_CAP]
-    kept = {n["id"] for n in nodes}
-    edges = [r for r in edges if r["src"] in kept and r["dst"] in kept]
+    """REAL - W2, F3a. Agency-scoped, date-filtered Cytoscape elements.
 
-    return GraphResponse(
-        nodes=[
-            GraphNode(data=GraphNodeData(
-                id=str(n["id"]), label=n["name"], entity_type=n["entity_type"],
-                agency_code=n["agency_code"], is_shared=n["is_shared"],
-                degree=_degree(n["id"], edges), attributes=n["attributes"],
-            ))
-            for n in nodes
-        ],
-        edges=[
-            GraphEdge(data=GraphEdgeData(
-                id=f"e{r['id']}", source=str(r["src"]), target=str(r["dst"]),
-                label=r["rel_type"], rel_type=r["rel_type"], confidence=r["confidence"],
-                valid_from=r["valid_from"], valid_to=r["valid_to"],
-                agency_code=r["agency_code"],
-            ))
-            for r in edges
-        ],
+    The first endpoint off the stubs. Returns an empty graph until seed.py
+    lands; that is correct, not a failure.
+    """
+    if center is not None and not can_see_entity(db, user, center):
+        # Same answer whether it is missing or simply not theirs.
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"no entity with id {center}",
+        )
+
+    graph = build_graph(
+        db,
+        user,
         center_id=center,
         depth=depth,
-        truncated=truncated,
+        date_from=date_from,
+        date_to=date_to,
+        types=[t.strip() for t in types.split(",") if t.strip()] if types else None,
+    )
+    elements = to_cytoscape(graph)
+    return GraphResponse(
+        nodes=elements["nodes"],
+        edges=elements["edges"],
+        center_id=center,
+        depth=depth,
+        truncated=graph.graph["truncated"],
     )
 
 

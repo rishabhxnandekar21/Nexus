@@ -3,6 +3,103 @@
 > Only Krish writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-29 · W2 F3a `graph.py` · `w2-graph-krish`
+
+Started Week 2 with W1-9 still outstanding and eight commits unmerged. That is
+against the rule in `PRD.md` Section 10 and I am noting it rather than
+pretending otherwise.
+
+**Done**
+- `app/graph.py` - `build_graph()`, `can_see_entity()`, `to_cytoscape()`
+- `GET /api/graph` now reads Postgres. First endpoint off the stubs.
+- `tests/test_graph.py` - 18 tests
+
+**The contract, unchanged from `PRD.md` Section 11**
+
+```python
+build_graph(db, user, center_id=None, depth=2, date_from=None,
+            date_to=None, types=None) -> nx.Graph
+```
+
+Rishabh: call this from `analysis.py`; do not edit `graph.py`. Node attributes
+are `name`, `entity_type`, `agency_id`, `agency_code`, `is_shared`,
+`source_ref`, `attributes`. Edge attributes are `id`, `rel_ids`, `rel_type`,
+`confidence`, `valid_from`, `valid_to`, `source_case`, `agency_id`,
+`agency_code`. Graph-level: `truncated`, `center_id`, `depth`.
+
+**Decisions**
+- **Entities scope on `agency_id` or `is_shared`; relationships on `agency_id`
+  alone.** The `relationships` table has no `is_shared`, and that is right
+  rather than an omission - the edge is the sensitive part. That a phone exists
+  may be shareable; who called whom is a telecom record a police investigator
+  has no claim on. **Consequence worth agreeing before the demo: a shared
+  entity can appear with no edges for an investigator.** I believe that is
+  correct - they may know the node exists and not its links - but it is a
+  judgement call and it will be visible on screen.
+- **An invisible centre returns the same 404 as a missing one.** Different
+  answers would let an investigator probe for records in other agencies.
+- **Date filtering is the overlap test**, carried over from the review fix.
+- **Parallel relationships collapse onto one edge**, with every underlying id
+  kept in `rel_ids`. The centrality and community algorithms in F5 assume a
+  simple graph, and two records of the same link would otherwise double-count.
+- **The graph is rebuilt per request**, no cache. At the 1,500-entity scale in
+  `PRD.md` Section 9 that is two queries, and it removes every
+  cache-invalidation question a persistent graph would add.
+
+**Verified - 25/25 pytest, 18 of them new**
+- **S2 is asserted, not eyeballed:** the investigator's graph has strictly
+  fewer nodes and fewer edges than the admin's, on rows the test creates. The
+  officer sees their own agency plus a shared entity from another, and not an
+  unshared one; the telecom edge to that shared phone is absent, so it has
+  degree 0.
+- Date overlap: an edge from 2019 with no end is still present in a 2024
+  window; one that ended in 2020 is not; one that begins in 2021 is absent from
+  a 2019 window; an ended edge is visible inside its own window.
+- Centring at depth 1 and 2, invisible centre gives an empty graph, types
+  filter, `can_see_entity` agreeing with the graph, parallel-edge collapse,
+  truncation flagging itself, empty database giving an empty graph.
+- Cytoscape ids are strings and every edge endpoint matches a node id.
+- Live: `/api/graph` returns `{"nodes":[],"edges":[],...}` for both users,
+  404 on a centre that does not exist, 401 without a token. The four stubbed
+  graph routes and `routers/entities.py` are unaffected. Audit chain valid
+  at 25 rows.
+
+**A frontend bug this surfaced, now fixed**
+Switching branches with the Vite dev server running deletes `frontend/` under
+it - `main` has no frontend - and the proxy comes back stale, answering
+`/api/*` with `index.html`. axios reports a 200, so `Dashboard` read `.nodes`
+off an HTML string and **blanked the entire page**. The stale server was my own
+doing, but a 200 with the wrong body is not, and a white screen is the worst
+possible failure. `Dashboard` now validates the shape before trusting it and
+shows a real message. It also has a proper empty state, which is what you see
+today. Practical note: **do not switch branches while `npm run dev` is up.**
+
+**Not done**
+- No `seed.py` - Rishabh's. Until it runs, `/api/graph` is correctly empty and
+  S2 cannot be shown on screen, only in tests.
+- `/graph/analytics`, `/path`, `/whatif`, `/predict` and all of
+  `routers/entities.py` are still stubs. Analytics is W4, the rest W5, search
+  and detail W3.
+
+**Files touched**
+- `backend/app/graph.py` (new), `backend/tests/test_graph.py` (new),
+  `backend/app/routers/graph.py`, `frontend/src/pages/Dashboard.jsx`,
+  `PROGRESS.md`, `progress/krish.md`
+
+**Next**
+- W3 F3b - `GraphView.jsx` and the Cytoscape canvas. It needs seed data to be
+  worth looking at, so `seed.py` is now the critical path for both of us.
+
+**For Rishabh**
+- **`seed.py` is the blocker for everything visual now.** My graph endpoint is
+  real and returns nothing because the database is empty.
+- `build_graph()` is stable - import it, do not edit `graph.py`. Signature and
+  attributes above.
+- Please push back on the relationship-scoping decision if you disagree; it
+  changes what an investigator sees in the demo.
+
+---
+
 ### 2026-09-29 · W1-5 audit.py + hash chain · `w1-5-audit-krish`
 
 **Rishabh - read the first bullet before anything else.**
