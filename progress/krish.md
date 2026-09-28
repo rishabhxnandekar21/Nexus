@@ -3,6 +3,50 @@
 > Only Krish writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-29 · review fixes on W1-7 · `w1-7-stubs-krish`
+
+Self-review of the two stub routers before the PR. Four findings, all four fixed
+on the same branch. Only my own files changed - no shared file touched.
+
+**Fixed**
+- **Date filter was the wrong predicate.** `_select()` kept edges on
+  `valid_from >= date_from`, so a relationship that began before the window and
+  never ended disappeared from it. `?from=2023-01-01` returned 2 edges and
+  dropped the 2019 `family_of` with a null `valid_to` - a sibling relationship
+  that has not ended. Now an overlap test: `valid_from <= date_to` and
+  (`valid_to` is null or `valid_to >= date_from`). Same range now returns 10.
+  This matters beyond the stub: it is the predicate behind F6 and S5a, and the
+  wrong one would have been copied into the real SQL in W2.
+- **The centre could be dropped from its own graph.** `keep &= reached | {center}`
+  put the centre on the right of an intersection, so a `types` filter excluding
+  it removed it while `center_id` still named it. `?center=5&types=person` gave
+  nodes 1,2,3 and no 5. Now `keep = (keep & reached) | {center}`.
+- **`POST /entities` hardcoded `agency_code="GJ_POLICE"`** while taking
+  `agency_id` from the token. Invisible today because `dev_users.py` only makes
+  GJ_POLICE users, wrong the moment `seed.py` creates three agencies. Now reads
+  the code from the agency row, same pattern as `_user_out` in `routers/auth.py`.
+- **`_METRICS` was indexed directly** for every id but hand-written for 1-12, so
+  a thirteenth record in `_ENTITIES` would 500 `/graph/analytics`. Now behind a
+  `_metric()` helper that falls back to zeros.
+
+**Verified**
+- Each fix re-tested live, plus the negative cases: a closed edge
+  (`called`, 2021-03-11 to 2021-03-11) is still correctly excluded from a 2023
+  window, and `?to=2020-12-31` still keeps only the three edges that had started.
+- Full regression over all 8 routes: 12/14 unfiltered, centre preserved at
+  depth 1, 404s, 403, 422, path, what-if, predict, 401, 26 schemas in `/docs`.
+
+**Files touched**
+- `backend/app/routers/graph.py`, `backend/app/routers/entities.py`,
+  `progress/krish.md`
+
+**For Rishabh**
+- The date-overlap predicate is the one to reuse when the real query lands.
+  Filtering on `valid_from` alone looks right and quietly erases every
+  open-ended relationship from any later window.
+
+---
+
 ### 2026-09-29 · W1-7 router stubs + environment · `w1-7-stubs-krish`
 
 Stacked on `w1-6-schemas-krish`, so one PR carries both. W1-6 cannot be proved

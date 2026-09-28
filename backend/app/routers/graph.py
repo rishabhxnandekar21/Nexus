@@ -59,6 +59,18 @@ _METRICS: dict[int, dict] = {
 }
 
 
+_DEFAULT_METRIC = {"betweenness": 0.0, "pagerank": 0.0, "community": 0}
+
+
+def _metric(entity_id: int) -> dict:
+    """Metrics for one node, tolerating a record with no hand-written row.
+
+    _METRICS is maintained by hand alongside _ENTITIES; adding a record to one
+    and not the other should not 500 the analytics endpoint.
+    """
+    return _METRICS.get(entity_id, _DEFAULT_METRIC)
+
+
 def _degree(entity_id: int, edges: list[dict]) -> int:
     return sum(1 for r in edges if entity_id in (r["src"], r["dst"]))
 
@@ -79,10 +91,16 @@ def _select(
 ) -> tuple[list[dict], list[dict]]:
     """Apply the same filters the real endpoint will, to the fake set."""
     edges = _RELATIONSHIPS
-    if date_from:
-        edges = [r for r in edges if date.fromisoformat(r["valid_from"]) >= date_from]
+    # Overlap, not a valid_from window: an edge that began before the range and
+    # never ended is still true inside it. Family and ownership links are
+    # open-ended, so testing valid_from alone erases them from any later range.
     if date_to:
         edges = [r for r in edges if date.fromisoformat(r["valid_from"]) <= date_to]
+    if date_from:
+        edges = [
+            r for r in edges
+            if r["valid_to"] is None or date.fromisoformat(r["valid_to"]) >= date_from
+        ]
 
     keep = {e["id"] for e in _ENTITIES}
     if types:
@@ -103,7 +121,9 @@ def _select(
                 nxt |= _neighbours(node, edges)
             frontier = nxt - reached
             reached |= nxt
-        keep &= reached | {center}
+        # The centre is added back after the intersection, not inside it - a
+        # types filter must never drop the node the graph is centred on.
+        keep = (keep & reached) | {center}
 
     nodes = [e for e in _ENTITIES if e["id"] in keep]
     edges = [r for r in edges if r["src"] in keep and r["dst"] in keep]
@@ -161,9 +181,9 @@ def get_analytics(
     metrics = [
         NodeMetrics(
             entity_id=n["id"], name=n["name"], degree=_degree(n["id"], edges),
-            betweenness=_METRICS[n["id"]]["betweenness"],
-            pagerank=_METRICS[n["id"]]["pagerank"],
-            community=_METRICS[n["id"]]["community"],
+            betweenness=_metric(n["id"])["betweenness"],
+            pagerank=_metric(n["id"])["pagerank"],
+            community=_metric(n["id"])["community"],
         )
         for n in nodes
     ]
@@ -275,7 +295,7 @@ def what_if(
 
     risers = sorted(
         (i for i in kept_ids),
-        key=lambda i: _METRICS[i]["betweenness"],
+        key=lambda i: _metric(i)["betweenness"],
         reverse=True,
     )[:5]
 
@@ -294,9 +314,9 @@ def what_if(
         top_risers=[
             BetweennessShift(
                 entity_id=i, name=_BY_ID[i]["name"],
-                before=_METRICS[i]["betweenness"],
-                after=round(_METRICS[i]["betweenness"] * 1.35, 3),
-                delta=round(_METRICS[i]["betweenness"] * 0.35, 3),
+                before=_metric(i)["betweenness"],
+                after=round(_metric(i)["betweenness"] * 1.35, 3),
+                delta=round(_metric(i)["betweenness"] * 0.35, 3),
             )
             for i in risers
         ],

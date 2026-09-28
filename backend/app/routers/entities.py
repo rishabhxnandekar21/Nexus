@@ -11,9 +11,11 @@ and a graph node refer to the same thing while both are stubs.
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
 
 from app.auth import get_current_user, require_admin
-from app.models import User
+from app.database import get_db
+from app.models import Agency, User
 from app.schemas import (
     EntityCreate,
     EntityDetailOut,
@@ -184,19 +186,28 @@ def get_entity(
 def create_entity(
     payload: EntityCreate,
     user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
 ) -> EntityOut:
     """STUB. Admin only - the first route to use require_admin over HTTP.
 
     Echoes the payload back with a fake id. The caller's agency is stamped on it
     rather than accepted from the body, which is how the real route must behave.
+    The code is read from that agency rather than assumed, so the two fields
+    cannot contradict each other once seed.py creates all three agencies.
     """
+    agency = db.get(Agency, user.agency_id)
+    if agency is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"user {user.id} references agency {user.agency_id}, which does not exist",
+        )
     return EntityOut(
         id=max(_BY_ID) + 1,
         entity_type=payload.entity_type.value,
         name=payload.name,
         attributes=payload.attributes,
         agency_id=user.agency_id,
-        agency_code="GJ_POLICE",
+        agency_code=agency.code,
         source_ref=payload.source_ref,
         is_shared=payload.is_shared,
         created_at=_CREATED,
