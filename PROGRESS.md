@@ -22,21 +22,21 @@
 | W1 | Repo, scaffold, Docker Postgres | Both | ✅ done | phase-0-scaffold-rishabh | #1 | `/api/health` ok, db connected |
 | W1 | `models.py` — all six tables | Both | ✅ done | phase-0-scaffold-rishabh | #1 | 6 tables + 5 indexes in psql |
 | W1 | `auth.py` — JWT + roles | Both | ✅ done | phase-2-auth-rishabh | #1 | 18/18 checks: login, /me, 401s, 403 |
-| W1 | `audit.py` — hash chain + pytest | Both | 🔵 in review | w1-5-audit-krish | — | 7/7 pytest; tamper detected at exact seq |
-| W1 | `schemas.py` — all contracts | Both | 🔵 in review | w1-6-schemas-krish | — | 34 models; 26 now in /docs, 8 await Rishabh's routers |
-| W1 | Router stubs returning fake data | Both | 🔵 in review | w1-7-stubs-krish | — | Krish's 8 routes live; 16/16 checks incl. 403 |
-| W1 | Frontend shell, AuthContext, login | Both | 🔵 in review | w1-8-frontend-krish | — | login, nav badges, refresh, logout - all live |
-| W2 | F7 `seed.py` + 3 scenarios | Rishabh | 🔵 in review | phase-1-seed-rishabh | — | 3 scenarios pass; digest reproducible; 1.6s |
-| W2 | F3a `graph.py` + `/api/graph` | Krish | 🔵 in review | w2-graph-krish | — | re-measured on seed.py: 402 vs 500 nodes, 296-327ms |
-| W3 | F3b GraphView, panel, search | Krish | 🔵 in review | w3-graphview-krish | — | S2 on screen: 402/410 vs 217/92 vs 500 |
+| W1 | `audit.py` — hash chain + pytest | Both | ✅ done | w1-5-audit-krish | merged ac0f495 | 7/7 pytest; tamper detected at exact seq |
+| W1 | `schemas.py` — all contracts | Both | ✅ done | w1-6-schemas-krish | merged ac0f495 | 34 models; 26 now in /docs, 8 await Rishabh's routers |
+| W1 | Router stubs returning fake data | Both | ✅ done | w1-7-stubs-krish | merged ac0f495 | Krish's 8 routes live; 16/16 checks incl. 403 |
+| W1 | Frontend shell, AuthContext, login | Both | ✅ done | w1-8-frontend-krish | merged ac0f495 | login, nav badges, refresh, logout - all live |
+| W2 | F7 `seed.py` + 3 scenarios | Rishabh | ✅ done | phase-1-seed-rishabh | #2 | 3 scenarios pass; digest reproducible; 1.6s |
+| W2 | F3a `graph.py` + `/api/graph` | Krish | ✅ done | w2-graph-krish | merged ac0f495 | re-measured on seed.py: 402 vs 500 nodes, 296-327ms |
+| W3 | F3b GraphView, panel, search | Krish | ✅ done | w3-graphview-krish | merged ac0f495 | S2 on screen: 402/410 vs 217/92 vs 500 |
 | W3 | F8a resolution scoring + endpoints | Rishabh | ⬜ not started | — | — | — |
 | W3 | F2 audit log page + verify button | Rishabh | ⬜ not started | — | — | — |
 | W4 | F8b resolution review UI + merge | Rishabh | ⬜ not started | — | — | — |
-| W4 | F5 analytics + community colouring | Krish | 🔵 in review | w4-analytics-krish | — | 47/47 pytest; 662ms/1040ms vs 3s budget |
-| W5 | F6 timeline slider + play | Krish | 🔵 in review | w5-timeline-krish | — | ring grows 5->32 nodes; play steps 2019-2025 |
+| W4 | F5 analytics + community colouring | Krish | ✅ done | w4-analytics-krish | merged ac0f495 | 47/47 pytest; 662ms/1040ms vs 3s budget |
+| W5 | F6 timeline slider + play | Krish | ✅ done | w5-timeline-krish | merged ac0f495 | ring grows 5->32 nodes; play steps 2019-2025 |
 | W5 | F9 what-if + link prediction | Rishabh | ⬜ not started | — | — | — |
 | W6 | F10 LLM query + brief + cache | Rishabh | ⬜ not started | — | — | — |
-| W6 | Integration, loading/empty/error states | Krish | 🔵 in review | w6-integration-krish | — | survives backend restart; boundary keeps nav |
+| W6 | Integration, loading/empty/error states | Krish | ✅ done | w6-integration-krish | merged ac0f495 | survives backend restart; boundary keeps nav |
 | W7 | Freeze, README, rehearsal, deck | Both | ⬜ not started | — | — | — |
 
 Status values: ⬜ not started · 🟡 in progress · 🔵 in review · ✅ done
