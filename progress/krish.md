@@ -3,6 +3,107 @@
 > Only Krish writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-29 · W3 F3b on real data, and the seed digest · `w3-graphview-krish`
+
+**Rishabh - the digest matches.**
+
+```
+549e06df2ed10651dbb132bb3eb566d9f8c0d2b45c48215d6b4f9f203c9289e1
+```
+
+`python seed.py --reset --verify` on this machine, byte-identical to yours. All
+twelve scenario checks PASS here too, largest component 630, bridge removal
+splits 316 / 313. That is F7's "byte-identical on both machines" criterion, the
+one you could not check alone, and it also settles the Python worry from day
+one - you are on 3.13.12, I am on **3.13.9**, and the digest is the same.
+**Week 2 is closed on both sides.**
+
+**Done - W3 F3b**
+- `GraphView.jsx` (Cytoscape), `EntityPanel.jsx`, `SearchBar.jsx`, rewritten
+  `Dashboard.jsx`
+- `routers/entities.py` is now real and database-backed
+- Entity visibility now has exactly one definition - `entity_scope()` and
+  `relationship_scope()` in `graph.py` - used by the graph, search and detail
+- `dev_data.py` deleted, as we both agreed. Its twelve records moved inline
+  into `routers/graph.py`, the only remaining consumer: the four endpoints
+  there that are still stubs.
+
+**The encoding decision, and why it is not a style choice**
+Entity type is carried by **shape first, colour second**. I ran the palette
+validator rather than picking colours by eye, and six categories cannot be
+distinguished by hue: the best available six-hue set scores worst-pair
+ΔE **1.6** for deuteranopia against a floor of 8, and **10.6** for normal
+vision against a floor of 15. Even evenly-spaced generated hues fail. So six
+distinct shapes, an always-on label and a legend carry identity, and colour
+only reinforces it. It works in greyscale and for a colourblind viewer, and it
+is a good viva answer.
+
+**Verified on the seeded data**
+
+| login | agency | nodes | edges |
+|---|---|---|---|
+| `investigator` | GJ_POLICE | 402 | 410 |
+| `admin` | all | **500 (capped, flagged truncated)** | 768 |
+| `telecom_officer` | TELECOM | 217 | 92 |
+| `rto_officer` | RTO | 191 | 25 |
+
+Entity counts match your table exactly. **S2 is proved on screen**, not just in
+the API - logging in as `telecom_officer` after `investigator` gives a visibly
+different network, different size and different shape. That is the W3 exit
+criterion.
+
+- Timing: centred queries at depth 1/2/3 return in **296-327ms** against F3's
+  1.5s budget.
+- Scenario B renders as a demo case: the two `Rakesh` records and the address
+  they share, with the shared record ringed.
+- Search, centre-on-result, the depth selector (4 / 7 / 9 nodes at depth
+  1 / 2 / 3 on a small centre), panel re-centring, and "show whole network" all
+  work against real data.
+- 36 pytest passing, oxlint clean, production build succeeds, audit chain valid.
+
+**Two defects found and fixed while verifying**
+- **402 nodes with every label drawn was an unreadable smear.** Node and edge
+  labels are now gated by `min-zoomed-font-size`, so the overview is a legible
+  shape and labels appear as you zoom in. This only showed up once there was
+  real data - the twelve fake records never exposed it.
+- **Picking a search result reopened the dropdown over the graph**, because
+  setting the input to the chosen name retriggered the search effect. A ref
+  marks that one term change so its response does not reopen the list.
+
+**Still not verified**
+- **Double-click to re-centre**, an F3 acceptance criterion. The handler is
+  wired and re-centring itself is proven through the search box and the panel
+  buttons, which call the same function - but I could not land a reliable
+  double-click on the canvas in the test browser. **Please try it by hand and
+  tell me if it works**; it is one click to confirm.
+
+**Files touched**
+- `backend/app/graph.py`, `backend/app/routers/entities.py`,
+  `backend/app/routers/graph.py`, `backend/dev_data.py` (deleted),
+  `backend/tests/conftest.py`, `backend/tests/test_entities.py` (new),
+  `frontend/src/components/GraphView.jsx`, `EntityPanel.jsx`, `SearchBar.jsx`
+  (all new), `frontend/src/pages/Dashboard.jsx`, `PROGRESS.md`,
+  `progress/krish.md`
+
+**Next**
+- W4 F5 analytics - centrality, communities, shortest path - which replaces the
+  first of the four remaining stubs.
+
+**For Rishabh**
+- **Digest matches. Week 2 is closed.**
+- **No objection to `.env.example` at 5433** - go ahead.
+- Thanks for confirming the relationship-scoping call. The seeded data shows it
+  clearly: `telecom_officer` gets 217 nodes but only 92 edges, because most of
+  what they can see they cannot see the links of.
+- `seed.py` at 487 lines over the 300 guideline - I would leave it. Splitting
+  static name pools into a second file to satisfy a line count trades one real
+  file for two, and §4 does not list the second one either. Flag it in the viva
+  as a deliberate call, the same way I am flagging `schemas.py` at 401.
+- Your three router stubs are still unwritten, so `/docs` is still 8 schemas
+  short. Not blocking me.
+
+---
+
 ### 2026-09-29 · W2 F3a closed out properly · `w2-graph-krish`
 
 Went back over F3a before starting anything else. It was pushed working but not

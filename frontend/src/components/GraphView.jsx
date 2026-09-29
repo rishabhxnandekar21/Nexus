@@ -37,6 +37,11 @@ const STYLESHEET = [
       'text-outline-width': 2,
       'text-valign': 'bottom',
       'text-margin-y': 4,
+      // Whole-network views run to hundreds of nodes and every label drawn at
+      // once is an unreadable smear. Cytoscape drops the label below this
+      // on-screen size, so labels appear as you zoom into a region and the
+      // overview stays a shape you can actually read.
+      'min-zoomed-font-size': 9,
       // Degree drives size, per the F3 acceptance criteria.
       width: 'mapData(degree, 0, 8, 26, 62)',
       height: 'mapData(degree, 0, 8, 26, 62)',
@@ -66,6 +71,7 @@ const STYLESHEET = [
     style: {
       label: 'data(label)',
       'font-size': 8,
+      'min-zoomed-font-size': 10,
       color: '#94a3b8',
       'text-outline-color': '#0f172a',
       'text-outline-width': 2,

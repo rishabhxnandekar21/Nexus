@@ -27,8 +27,8 @@
 | W1 | Router stubs returning fake data | Both | 🔵 in review | w1-7-stubs-krish | — | Krish's 8 routes live; 16/16 checks incl. 403 |
 | W1 | Frontend shell, AuthContext, login | Both | 🔵 in review | w1-8-frontend-krish | — | login, nav badges, refresh, logout - all live |
 | W2 | F7 `seed.py` + 3 scenarios | Rishabh | 🔵 in review | phase-1-seed-rishabh | — | 3 scenarios pass; digest reproducible; 1.6s |
-| W2 | F3a `graph.py` + `/api/graph` | Krish | 🔵 in review | w2-graph-krish | — | 25/25 pytest; live investigator 10/9 vs admin 12/14 |
-| W3 | F3b GraphView, panel, search | Krish | 🟡 in progress | w3-graphview-krish | — | — |
+| W2 | F3a `graph.py` + `/api/graph` | Krish | 🔵 in review | w2-graph-krish | — | re-measured on seed.py: 402 vs 500 nodes, 296-327ms |
+| W3 | F3b GraphView, panel, search | Krish | 🔵 in review | w3-graphview-krish | — | S2 on screen: 402/410 vs 217/92 vs 500 |
 | W3 | F8a resolution scoring + endpoints | Rishabh | ⬜ not started | — | — | — |
 | W3 | F2 audit log page + verify button | Rishabh | ⬜ not started | — | — | — |
 | W4 | F8b resolution review UI + merge | Rishabh | ⬜ not started | — | — | — |
@@ -76,6 +76,7 @@ an existing line.
 | 2026-09-29 | Krish | CLAUDE.md | Team name in Section 1 changed from `Delulu Developers` to `Apostrophe`, to match Rishabh's README edit of 27 Sep. The two documents had disagreed since then. | no |
 | 2026-09-29 | Krish | graph.py, routers/graph.py | W2 F3a. New `app/graph.py` with `build_graph()`, `can_see_entity()` and `to_cytoscape()`. `GET /api/graph` now reads Postgres instead of the fake set - **it returns an empty graph until `seed.py` runs, which is correct, not a failure.** The other four graph routes and all of `routers/entities.py` are still stubs. | no |
 | 2026-09-29 | Krish | dev_data.py | W2 F3a verification. New **temporary** `backend/dev_data.py` loads the 12 stub records into Postgres so the W2 exit criterion can actually be checked - both tokens returned an empty graph before it. **It is not `seed.py` and does not pretend to be**: no scenarios, no volumes, no determinism, no `--reset`/`--verify`. It reads its rows from `routers/entities.py`, so there is one copy of the fake network. Delete it with the stubs when F7 lands. | yes - `python dev_users.py && python dev_data.py` |
+| 2026-09-29 | Krish | dev_data.py (deleted), routers/graph.py, routers/entities.py | W3 F3b. **`dev_data.py` deleted** - `seed.py` replaces it, as agreed. Its twelve fake records moved inline into `routers/graph.py`, which is the only remaining consumer: the four endpoints there that are still stubs (analytics W4; path, what-if, predict W5). `routers/entities.py` is now real and database-backed. Entity visibility is defined once, in `graph.py` as `entity_scope()` / `relationship_scope()`, and search, detail and the graph all use it. | no - `seed.py --reset` covers it |
 
 ---
 

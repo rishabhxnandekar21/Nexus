@@ -14,6 +14,10 @@ export default function SearchBar({ onPick }) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
   const boxRef = useRef(null)
+  // Picking a result sets the term to that name, which retriggers the search
+  // effect and reopened the dropdown right after it was chosen. This marks the
+  // one term change that came from a pick so its response does not reopen it.
+  const justPicked = useRef(false)
 
   const active = Boolean(term.trim() || type)
   // Derived, not cleared in an effect: with no query there is nothing to show,
@@ -31,7 +35,8 @@ export default function SearchBar({ onPick }) {
           if (cancelled) return
           setResults(Array.isArray(response.data) ? response.data : [])
           setError('')
-          setOpen(true)
+          if (justPicked.current) justPicked.current = false
+          else setOpen(true)
         })
         .catch(() => {
           if (!cancelled) setError('Search failed.')
@@ -52,6 +57,7 @@ export default function SearchBar({ onPick }) {
   }, [])
 
   function pick(entity) {
+    justPicked.current = true
     onPick(entity.id)
     setOpen(false)
     setTerm(entity.name)
