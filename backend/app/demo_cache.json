@@ -1,0 +1,46 @@
+{
+  "_README": "Committed fallback for F10. Keys are questions normalised to lowercase with collapsed whitespace and no trailing punctuation. Used whenever the model is unavailable - no API key, no network, exhausted quota - so the four scripted demo queries work offline. The answer text here is phrasing only: routers/query.py always recomputes the counts and the entity ids from the live database and appends them, so nothing on screen is a number from a recording.",
+
+  "queries": {
+    "which people are on record with the police since 2023": {
+      "interpretation": "People held in Gujarat Police records with a connection active from 2023 onward.",
+      "filters": {
+        "entity_types": ["person"],
+        "agency_codes": ["GJ_POLICE"],
+        "date_from": "2023-01-01"
+      },
+      "answer": "These are the people the police hold records on whose links are still live in or after 2023."
+    },
+
+    "find everyone named rakesh": {
+      "interpretation": "Any person whose name contains Rakesh, across every agency the caller can see.",
+      "filters": {
+        "entity_types": ["person"],
+        "name_contains": "Rakesh"
+      },
+      "answer": "Partial name match on Rakesh. Spelling varies between agencies, which is exactly what the resolution queue is for."
+    },
+
+    "show me the telecom call records between 2020 and 2022": {
+      "interpretation": "Phones involved in a call that overlaps the window from 2020 to the end of 2022.",
+      "filters": {
+        "entity_types": ["phone"],
+        "rel_types": ["called"],
+        "date_from": "2020-01-01",
+        "date_to": "2022-12-31"
+      },
+      "answer": "Phones with call activity overlapping 2020 to 2022. A call that started earlier and had not ended still counts inside the window."
+    },
+
+    "which vehicles are registered at a known address": {
+      "interpretation": "Vehicles with a registered_at link to a location record.",
+      "filters": {
+        "entity_types": ["vehicle"],
+        "rel_types": ["registered_at"]
+      },
+      "answer": "Vehicles the RTO has tied to an address. These are the ones that can be placed somewhere."
+    }
+  },
+
+  "briefs": {}
+}
