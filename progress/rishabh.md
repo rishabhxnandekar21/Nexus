@@ -3,6 +3,129 @@
 > Only Rishabh writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-29 · W2 F7 `seed.py` + three scenarios · `phase-1-seed-rishabh`
+
+Branched off `main`, not off Krish's chain. `seed.py` needs only `models.py`,
+`database.py` and `auth.py`, all merged in PR #1, so this PR stays independently
+reviewable and does not inherit five unreviewed tasks.
+
+**Volumes — F7's targets, actual in brackets**
+
+3 agencies [3] · 6 users [6] · ~300 persons [303] · ~80 crime events [80] ·
+~120 phones [121] · ~90 vehicles [90] · ~40 locations [41] · ~900 relationships
+[940] · plus **15 organizations**, not in F7's list, added so all six
+`entity_type` values exist in the data.
+
+`--reset` runs in **1.6 seconds** against F7's 30-second budget.
+
+**Determinism — proved, not asserted**
+
+One `random.Random(20260929)` drives every choice, inserts happen in fixed order,
+and `--reset` resets the SERIAL sequences, so ids are stable too. `--verify` prints
+a **content digest** — SHA-256 over every agency, user, entity and relationship in
+id order — so both machines compare one string instead of trusting each other.
+
+Two full wipe-and-reseed cycles gave the identical digest:
+
+```
+549e06df2ed10651dbb132bb3eb566d9f8c0d2b45c48215d6b4f9f203c9289e1
+```
+
+**Krish: run `python seed.py --reset --verify` and tell me if your digest differs.**
+That is the F7 "byte-identical on both machines" criterion, and it is the one thing
+I cannot check alone.
+
+Deliberately excluded from the digest: `password_hash` (bcrypt salts differ every
+run) and `created_at` (Postgres generates it). Neither is data we authored, and
+including either would make the digest useless.
+
+**The topology decision that makes Scenario C work**
+
+Scenario C needs removing one person to split the largest component roughly in
+half. That is only true if nothing *else* joins the two sides — and with 940 random
+relationships over 650 entities, an accidental second path is close to certain. So
+the whole population is **partitioned into two halves**: persons, phones, vehicles,
+locations, crime events and organizations are each split, every background
+relationship stays inside its half, and the two halves meet only at the bridge.
+Each half gets a random spanning tree first so it is guaranteed to be one
+component, then extra edges on top.
+
+Scenario B's two records also sit in the *same* half deliberately — they share a
+phone and an address, so splitting them across halves would create a second bridge
+and quietly break Scenario C.
+
+**Verified — all three scenarios**
+
+| Scenario | Result |
+|---|---|
+| **A — crime ring** | 12 people around one central figure, 15 person-neighbours once background edges are counted. Spans `person`, `phone`, `vehicle`, `crime_event` — all three agencies. Edges dated 2019, 2020, 2021, 2022, 2023, 2024, 2025, so F6's slider has seven steps to replay. |
+| **B — duplicate identity** | `Rakesh Kumarbhai Yadav` (GJ_POLICE) vs `Rakesh Kumar Yadhav` (RTO). Share one phone entity and one location entity. DOBs two days apart. |
+| **C — bridge node** | Largest component 630 nodes. Removing the bridge splits it **316 / 313 — a 50/50 halving.** |
+
+Scenario entities carry an `attributes["scenario"]` marker (`A_center`, `A_member`,
+`B_record_a`, `B_record_b`, `C_bridge`) so `--verify` and the demo can find them.
+First version looked them up by `source_ref` prefix, which was wrong: a person's
+prefix depends on a random agency draw, so the lookup would have silently missed.
+
+**Agency scoping is visible in the data — the S2 mechanism**
+
+| login | role | agency | entities | relationships |
+|---|---|---|---|---|
+| `investigator` | investigator | GJ_POLICE | 402/650 | 616/940 |
+| `admin` | admin | GJ_POLICE | **650/650** | **940/940** |
+| `telecom_officer` | investigator | TELECOM | 217/650 | 188/940 |
+| `rto_officer` | investigator | RTO | 191/650 | 136/940 |
+
+80 of 650 entities are `is_shared`. Persons are split 225 police / 40 RTO owner
+records / 38 telecom subscriber records — that cross-agency overlap is what makes
+entity resolution meaningful rather than a toy.
+
+**Deliberate noise, per the PRD risk table**
+61 persons with no alias, 29 with no address, 20 entities with no edges at all.
+
+**All six logins verified** — correct password accepted, wrong password rejected.
+Password is the username followed by `123`.
+
+**`backend/dev_users.py` deleted.** Its own docstring said to remove it when
+`seed.py` landed. `seed.py` keeps the same `investigator` / `admin` usernames and
+passwords, so nothing that relied on it breaks. `auth.py` had one docstring line
+naming it; that now says `seed.py`. Logged as a shared-file change.
+
+**Not done, and why**
+- **The ~0.85 score for Scenario B is not asserted.** `resolution.py` does not
+  exist yet, so there is no scorer to run. `--verify` checks the *structural*
+  preconditions instead — close names, shared phone, shared location, DOBs two days
+  apart. I will assert the actual score in W3 F8a and tune the weights then.
+- `seed.py` is **487 lines**, over the ~300 guideline in `CLAUDE.md` §4. Most of it
+  is static name pools and the three scenario builders. Splitting the pools into a
+  sibling module would fix it but adds a file not in §4. Flagging rather than
+  deciding alone.
+
+**Files touched**
+- `backend/seed.py` (new), `backend/dev_users.py` (deleted),
+  `backend/app/auth.py` (one docstring line), `PROGRESS.md`
+
+**Next**
+- W3 F8a `resolution.py` scoring, or my three router stubs
+  (`routers/audit.py`, `resolution.py`, `query.py`) which Krish left for me.
+
+**For Krish**
+- **Run `python seed.py --reset --verify` and compare the digest above.**
+- **`python dev_users.py` no longer exists** — `seed.py` replaces it, same two
+  logins, plus four more. Your notes still say to run it.
+- **`dev_data.py` should go when your chain merges.** `seed.py` gives you a real
+  630-node component instead of 12 fake records, and your `/api/graph` will finally
+  return something. Your F3a exit criterion can be re-measured on real data.
+- **I agree with your relationship-scoping call** — entities on `agency_id` OR
+  `is_shared`, relationships on `agency_id` alone. A shared node appearing with no
+  edges is correct: knowing a phone exists is not knowing who called it. It is also
+  a good viva answer. Seeded data exercises it — 80 shared entities.
+- **`.env.example` still says 5432 and we both hit the clash.** Two for two, so I
+  will flip it to 5433 with a comment unless you object.
+- Your `ResolutionFeature` shape looks fine; I will confirm when F8a lands.
+
+---
+
 ### 2026-09-28 · W1-4 auth.py · `phase-2-auth-rishabh`
 
 Branched off `phase-0-scaffold-rishabh`, **not** off `main`, because `models.py` and
