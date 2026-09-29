@@ -35,7 +35,7 @@
 | W4 | F5 analytics + community colouring | Krish | ✅ done | w4-analytics-krish | merged ac0f495 | 47/47 pytest; 662ms/1040ms vs 3s budget |
 | W5 | F6 timeline slider + play | Krish | ✅ done | w5-timeline-krish | merged ac0f495 | ring grows 5->32 nodes; play steps 2019-2025 |
 | W5 | F9 what-if + link prediction | Rishabh | 🔵 in review | w5-analysis-rishabh | — | logic 11/11 pytest, bridge splits 500->250+250; **routes need Krish** |
-| W6 | F10 LLM query + brief + cache | Rishabh | 🟡 Rishabh | w6-llm-rishabh | — | — |
+| W6 | F10 LLM query + brief + cache | Rishabh | 🔵 in review | w6-llm-rishabh | — | 21/21; four scripted queries answer with no API key |
 | W6 | Integration, loading/empty/error states | Krish | ✅ done | w6-integration-krish | merged ac0f495 | survives backend restart; boundary keeps nav |
 | W7 | Freeze, README, rehearsal, deck | Both | ⬜ not started | — | — | — |
 
@@ -49,8 +49,8 @@ Status values: ⬜ not started · 🟡 in progress · 🔵 in review · ✅ done
 |---|---|---|---|
 | S1 | Multi-source data appears as one graph | Krish | ⬜ |
 | S2 | Two logins → two visibly different graphs | Krish | ⬜ |
-| S3 | Duplicate proposed, human-confirmed, nodes merge on screen | Rishabh | ⬜ |
-| S4 | Tampered audit row → `/audit/verify` reports the exact seq | Rishabh | ⬜ |
+| S3 | Duplicate proposed, human-confirmed, nodes merge on screen | Rishabh | ✅ scores 0.8556, merge 650->649 entities, audited |
+| S4 | Tampered audit row → `/audit/verify` reports the exact seq | Rishabh | ✅ seq 3 tampered → broken_at_seq 3; deletion caught too |
 | S5 | Timeline replays growth; bridge removal splits the graph | Both | ⬜ |
 
 ---
@@ -166,3 +166,4 @@ re-litigates them.
 | 2026-09-29 | Rishabh | main.py | W3 F2. Two lines mounting `routers/audit.py`. | no |
 | 2026-09-30 | Rishabh | main.py | W3 F8a. Two lines mounting `routers/resolution.py`. | no |
 | 2026-09-30 | Rishabh | App.jsx | W5 F9. Added an `/analysis` route and one nav entry for `AnalysisPanel`, which PRD Section 11 gives no page. | no |
+| 2026-09-30 | Rishabh | main.py | W6 F10. Two lines mounting `routers/query.py`. | no |

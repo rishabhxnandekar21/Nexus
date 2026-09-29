@@ -3,6 +3,169 @@
 > Only Rishabh writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-30 · W3 F2, W3/W4 F8, W5 F9, W6 F10 · four branches
+
+Merged Krish's whole chain into `main` first (`ac0f495`, 22 commits, zero
+conflicts) because every frontend page below builds on his shell, his `Notice`
+component and his `useAuth()` hook. Reviewed before merging: the audit payload
+matches §5 character for character, `audit.py` honours the naive-UTC requirement
+from `models.py`, `schemas.py` kept my three auth models, `models.py` untouched,
+and his suite passes here. **His 22 commits went in without a PR** - my fault for
+merging locally, and the Decisions log wants PRs on both profiles, so his future
+branches should get one opened first.
+
+Then four tasks, one branch each, each verified before the next started.
+
+---
+
+**W3 F2 · audit routes and page · `w3-audit-rishabh` · S4 PROVED**
+
+`routers/audit.py` - `GET /api/audit` and `/audit/verify`, admin only per §5.
+Both are themselves audited: reading the log appends to the log, which is right.
+
+`AuditLog.jsx` - verify button, the chain as a table with each row's `prev_hash`
+beside its `hash`, the broken row highlighted red. A 403 renders as "admin only",
+not an error, because an investigator hitting it has done nothing wrong.
+
+Verified 16/16, including the tamper case the PRD actually specifies:
+
+| | |
+|---|---|
+| tampered `details` on seq 3 | `{valid: false, broken_at_seq: 3, checked: 3}` |
+| deleted a middle row (seq 4) | detected, reported at seq 5 — the row after the gap |
+| both restored afterwards | chain verifies valid again |
+
+It leaves a working database rather than a broken one.
+
+The page first went in with a `set-state-in-effect` lint warning — the class Krish
+cleared in W6. Rewrote it as a promise chain inside the effect with an `attempt`
+counter, matching `AuthContext`, rather than suppressing it.
+
+---
+
+**W3 F8a + W4 F8b · resolution · `w3-resolution-rishabh` · S3 PROVED**
+
+Five signals, fixed documented weights summing to 1.0 — name 0.35, shared phone
+0.25, shared address 0.20, shared co-accused 0.10, DOB proximity 0.10 — each
+recorded in `features` with what it contributed. Not a trained model.
+
+Name similarity is token-based and symmetric. A whole-string ratio badly
+understates `Rakesh Kumarbhai Yadav` against `Rakesh Kumar Yadhav`.
+
+Blocking keeps the cost honest: 303 persons is ~45,000 pairs for a handful of real
+matches, so only pairs sharing a name token or a phone or location are scored.
+2,634 pairs in 530ms.
+
+**The seeded Scenario B pair scores 0.8556** against the ~0.85 `seed.py` was built
+for, and the contributions sum to the score.
+
+The merge deletes record B rather than leaving it edgeless, because `build_graph`
+adds every visible entity as a node — an edgeless B would still render, and F8
+requires two nodes becoming one. So the candidate rows pointing at B go too, and
+the permanent record is the audit entry naming both ids, hash-chained. Stronger
+than a mutable queue row.
+
+Confirm asks twice. It is the one irreversible action in the app.
+
+Verified 30/30: confirm rewires 1 relationship, removes B from the graph, drops
+the database 650 → 649, 404s the merged record, writes an audit entry naming both
+ids, leaves the chain valid, and refuses a second confirm. Reject is never
+re-proposed.
+
+**Bug found:** `models.py` declares the foreign keys but no ORM `relationship()`,
+so SQLAlchemy did not know `resolution_candidates` depends on `entities` and
+ordered the entity DELETE first in one flush. Postgres rejected it. Fixed by
+flushing the candidate deletes first.
+
+---
+
+**W5 F9 · analysis · `w5-analysis-rishabh` · S5b BLOCKED on Krish**
+
+`analysis.py` consumes the graph `build_graph()` returns and never edits it.
+
+- `what_if` — before/after node, edge, component and largest-component counts,
+  plus the five nodes whose betweenness rose most. Exact betweenness, not
+  k-sampled: sampling noise would make a node appear to rise for no reason on a
+  screen whose job is to name the new key connector.
+- `predict_links` — NetworkX Adamic-Adar and Jaccard over non-adjacent pairs with
+  a neighbour in common.
+
+**Removing the Scenario C bridge takes the largest component 500 → 250 + 250 as
+admin (497ms), and 317 → 169 + 148 as an investigator (220ms).**
+
+`tests/test_analysis.py`, 11 tests, including one proving Adamic-Adar ranks a
+quiet shared contact above a hub. The S5b test needs a read-only session because
+the shared `db` fixture empties every table — right for unit tests, wrong for a
+claim about `seed.py`'s output.
+
+**S5b is not closed.** `POST /graph/whatif` and `GET /graph/predict` are still the
+W1-7 stubs on hardcoded data, in `routers/graph.py`, which is Krish's. REQUEST
+with the exact replacement bodies is in `PROGRESS.md`.
+
+---
+
+**W6 F10 · LLM layer · `w6-llm-rishabh` · PROVED OFFLINE**
+
+The model returns filters only; `clean_filters()` drops anything outside a fixed
+allow-list before a query exists. A question containing `DROP TABLE entities`
+returns an ordinary scoped result.
+
+Everything degrades to `demo_cache.json` and then to a deterministic answer. The
+cache supplies phrasing only — counts and ids are always recomputed live, so
+nothing on screen is a number from a recording.
+
+**All four scripted queries answer in under 50ms with `LLM_API_KEY` empty**: 200
+police records since 2023, 18 named Rakesh, 62 phones with calls overlapping
+2020-2022, 40 vehicles tied to an address.
+
+**Two bugs found, both mine:**
+1. `entity_scope()` returns **None** for an admin meaning "no restriction" —
+   `graph.py` says so plainly and I did not honour it. `.where(None)` matches
+   nothing in SQLAlchemy 2.x, so an admin got 0 results and an investigator 13.
+   Exactly backwards, and an ugly thing to find mid-demo.
+2. A question yielding no filters returned every record in scope, capped at 200.
+   That looks like an answer while being none. Now returns nothing and says why.
+
+---
+
+**Totals**
+
+58 pytest passing, frontend lints clean and builds, `seed.py --verify` digest
+unchanged at `549e06df…`.
+
+**Files touched**
+- new: `app/routers/audit.py`, `app/resolution.py`, `app/routers/resolution.py`,
+  `app/analysis.py`, `app/llm.py`, `app/routers/query.py`, `app/demo_cache.json`,
+  `tests/test_analysis.py`, `pages/AuditLog.jsx`, `pages/Resolution.jsx`,
+  `pages/Analysis.jsx`, `components/AnalysisPanel.jsx`, `components/NLQueryBox.jsx`
+- shared: `app/main.py` (six lines of router mounts), `App.jsx` (routes + one nav
+  entry), `PROGRESS.md`
+
+**Next**
+- F11 Stats is **not started and not on the phase board** — it is P2 in PRD §7 and
+  needs a counts endpoint that §6 does not define, so I have not invented one. The
+  nav still points `/stats` at a placeholder.
+- W1-9 foundation review, still outstanding.
+
+**For Krish**
+- **The REQUEST in `PROGRESS.md` is the only thing blocking S5b.** Two route
+  bodies, three lines each, exact code given. `analysis.what_if` already returns
+  the `WhatIfResponse` shape.
+- **`GraphView.jsx`:** predicted links want dashed edges. `GraphEdgeData.predicted`
+  already exists for it. Not urgent — my panel lists them with dashed borders.
+- **`Dashboard.jsx`:** it keeps `centerId` in local state, so I cannot deep-link a
+  query result to a centred graph. If you read `?center=` from the URL, the NL
+  query box can hand off to your canvas, which is what F10 asks for.
+- **I agree on raising the ~300-line guideline**, and it needs writing down once
+  rather than justifying per file. `resolution.py` is 300 and `AnalysisPanel.jsx`
+  is 290, so I have added to the problem.
+- `.env.example` is still 5432. Both machines clash. I will flip it unless you say
+  otherwise.
+- **Your PageRank stays hand-written.** Do not add scipy. "We implemented power
+  iteration" is a better viva answer than "we imported it".
+
+---
+
 ### 2026-09-29 · W2 F7 `seed.py` + three scenarios · `phase-1-seed-rishabh`
 
 Branched off `main`, not off Krish's chain. `seed.py` needs only `models.py`,
