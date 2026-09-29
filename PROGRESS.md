@@ -32,7 +32,7 @@
 | W3 | F8a resolution scoring + endpoints | Rishabh | ⬜ not started | — | — | — |
 | W3 | F2 audit log page + verify button | Rishabh | ⬜ not started | — | — | — |
 | W4 | F8b resolution review UI + merge | Rishabh | ⬜ not started | — | — | — |
-| W4 | F5 analytics + community colouring | Krish | ⬜ not started | — | — | — |
+| W4 | F5 analytics + community colouring | Krish | 🟡 in progress | w4-analytics-krish | — | — |
 | W5 | F6 timeline slider + play | Krish | ⬜ not started | — | — | — |
 | W5 | F9 what-if + link prediction | Rishabh | ⬜ not started | — | — | — |
 | W6 | F10 LLM query + brief + cache | Rishabh | ⬜ not started | — | — | — |
