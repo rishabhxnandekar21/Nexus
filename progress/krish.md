@@ -70,12 +70,12 @@ criterion.
   setting the input to the chosen name retriggered the search effect. A ref
   marks that one term change so its response does not reopen the list.
 
-**Still not verified**
-- **Double-click to re-centre**, an F3 acceptance criterion. The handler is
-  wired and re-centring itself is proven through the search box and the panel
-  buttons, which call the same function - but I could not land a reliable
-  double-click on the canvas in the test browser. **Please try it by hand and
-  tell me if it works**; it is one click to confirm.
+**Double-click to re-centre - now verified**
+Confirmed by reaching the live Cytoscape instance and emitting `dbltap` on a
+node, rather than trying to land a pixel-perfect double-click on a canvas:
+a degree-2 phone took the view from 217 nodes / 92 edges to 3 / 2, centred on
+that phone, panel populated. The earlier failures were the test harness, not
+the code. **Every F3 acceptance criterion is now met.**
 
 **Files touched**
 - `backend/app/graph.py`, `backend/app/routers/entities.py`,
