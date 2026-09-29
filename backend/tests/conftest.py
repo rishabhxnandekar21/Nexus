@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.database import engine  # noqa: E402
-from app.models import AuditLog  # noqa: E402
+from app.models import AuditLog, Entity, Relationship, ResolutionCandidate  # noqa: E402
 
 
 @pytest.fixture
@@ -26,9 +26,13 @@ def db():
     transaction = connection.begin()
     session = Session(bind=connection)
 
-    # Start from an empty chain so seq numbers and the genesis prev_hash are
-    # deterministic. Rolled back with everything else, so the real log is
-    # untouched.
+    # Every test starts from an empty graph and an empty chain, so assertions
+    # can be exact instead of "at least". Whatever dev_data.py happens to have
+    # loaded is not the test's business, and a test that passes only because of
+    # ambient rows is worse than no test. Children first, for the foreign keys.
+    session.execute(delete(ResolutionCandidate))
+    session.execute(delete(Relationship))
+    session.execute(delete(Entity))
     session.execute(delete(AuditLog))
     session.flush()
 

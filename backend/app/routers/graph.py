@@ -20,7 +20,7 @@ from app.audit import audited
 from app.database import get_db
 from app.graph import build_graph, can_see_entity, to_cytoscape
 from app.models import User
-from app.routers.entities import _BY_ID, _ENTITIES, _RELATIONSHIPS
+from dev_data import STUB_ENTITIES as _ENTITIES, STUB_RELATIONSHIPS as _RELATIONSHIPS
 from app.schemas import (
     AnalyticsResponse,
     BetweennessShift,
@@ -36,6 +36,8 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/api/graph", tags=["graph"])
+
+_BY_ID = {e["id"]: e for e in _ENTITIES}
 
 # The node cap lives in graph.py, which is the only thing that applies it. It
 # was duplicated here while GET /api/graph was a stub; two copies of a limit

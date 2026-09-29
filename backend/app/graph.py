@@ -28,6 +28,29 @@ def _is_admin(user: User) -> bool:
     return user.role == "admin"
 
 
+def entity_scope(user: User):
+    """SQL predicate for "this user may see this entity", or None for an admin.
+
+    Exported so `routers/entities.py` filters on exactly the same rule the
+    graph does. Two definitions of visibility is how a scoping demo quietly
+    stops being true on one screen but not another.
+    """
+    if _is_admin(user):
+        return None
+    return or_(Entity.agency_id == user.agency_id, Entity.is_shared.is_(True))
+
+
+def relationship_scope(user: User):
+    """SQL predicate for relationship visibility, or None for an admin.
+
+    Agency only - see the note in build_graph on why the edge is the sensitive
+    part and there is no `is_shared` on relationships.
+    """
+    if _is_admin(user):
+        return None
+    return Relationship.agency_id == user.agency_id
+
+
 def build_graph(
     db: Session,
     user: User,
@@ -117,10 +140,9 @@ def _visible_entities(
 ) -> dict[int, tuple[Entity, str]]:
     """Entity id -> (row, agency code), already scoped and type-filtered."""
     stmt = select(Entity, Agency.code).join(Agency, Agency.id == Entity.agency_id)
-    if not _is_admin(user):
-        stmt = stmt.where(
-            or_(Entity.agency_id == user.agency_id, Entity.is_shared.is_(True))
-        )
+    scope = entity_scope(user)
+    if scope is not None:
+        stmt = stmt.where(scope)
     if types:
         stmt = stmt.where(Entity.entity_type.in_(list(types)))
     return {row.id: (row, code) for row, code in db.execute(stmt).all()}
@@ -136,8 +158,9 @@ def _visible_relationships(
     stmt = select(Relationship, Agency.code).join(
         Agency, Agency.id == Relationship.agency_id
     )
-    if not _is_admin(user):
-        stmt = stmt.where(Relationship.agency_id == user.agency_id)
+    scope = relationship_scope(user)
+    if scope is not None:
+        stmt = stmt.where(scope)
 
     # Overlap: the relationship was active at some point inside [from, to].
     if date_to is not None:
@@ -164,10 +187,9 @@ def can_see_entity(db: Session, user: User, entity_id: int) -> bool:
     caller has no claim on.
     """
     stmt = select(Entity.id).where(Entity.id == entity_id)
-    if not _is_admin(user):
-        stmt = stmt.where(
-            or_(Entity.agency_id == user.agency_id, Entity.is_shared.is_(True))
-        )
+    scope = entity_scope(user)
+    if scope is not None:
+        stmt = stmt.where(scope)
     return db.execute(stmt).scalar_one_or_none() is not None
 
 
