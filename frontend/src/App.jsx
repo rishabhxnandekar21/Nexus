@@ -7,6 +7,7 @@ import { useAuth } from './context/AuthContext'
 import AuditLog from './pages/AuditLog'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
+import Resolution from './pages/Resolution'
 
 const NAV = [
   { to: '/', label: 'Dashboard', end: true },
@@ -137,17 +138,7 @@ export default function App() {
             <Shell>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
-                <Route
-                  path="/resolution"
-                  element={
-                    <Placeholder
-                      title="Resolution queue"
-                      owner="Rishabh"
-                      week="W3–W4"
-                      description="Proposed duplicate identities, reviewed and confirmed by a human. Nothing ever auto-merges."
-                    />
-                  }
-                />
+                <Route path="/resolution" element={<Resolution />} />
                 <Route path="/audit" element={<AuditLog />} />
                 <Route
                   path="/stats"
