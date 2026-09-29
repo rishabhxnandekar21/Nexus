@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.routers import audit, auth, entities, graph, query, resolution
+from app.routers import audit, auth, entities, graph, query, resolution, stats
 
 app = FastAPI(title="CrimeNet AI", version="0.1.0")
 
@@ -25,6 +25,7 @@ app.include_router(entities.router)
 app.include_router(graph.router)
 app.include_router(query.router)
 app.include_router(resolution.router)
+app.include_router(stats.router)
 
 
 @app.get("/api/health")

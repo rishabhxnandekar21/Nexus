@@ -11,7 +11,7 @@
 >   `progress/rishabh.md`.
 
 **Current phase:** Week 1 — Foundation (both)
-**Last updated:** 2026-09-29
+**Last updated:** 2026-09-30
 
 ---
 
@@ -29,14 +29,15 @@
 | W2 | F7 `seed.py` + 3 scenarios | Rishabh | ✅ done | phase-1-seed-rishabh | #2 | 3 scenarios pass; digest reproducible; 1.6s |
 | W2 | F3a `graph.py` + `/api/graph` | Krish | ✅ done | w2-graph-krish | merged ac0f495 | re-measured on seed.py: 402 vs 500 nodes, 296-327ms |
 | W3 | F3b GraphView, panel, search | Krish | ✅ done | w3-graphview-krish | merged ac0f495 | S2 on screen: 402/410 vs 217/92 vs 500 |
-| W3 | F8a resolution scoring + endpoints | Rishabh | 🔵 in review | w3-resolution-rishabh | — | Scenario B scores 0.8556, five signals itemised |
-| W3 | F2 audit log page + verify button | Rishabh | 🔵 in review | w3-audit-rishabh | — | S4 proved: 16/16, tamper named at exact seq |
-| W4 | F8b resolution review UI + merge | Rishabh | 🔵 in review | w3-resolution-rishabh | — | S3 proved: 30/30, merge is two-step and audited |
+| W3 | F8a resolution scoring + endpoints | Rishabh | ✅ done | w3-resolution-rishabh | #3 | Scenario B scores 0.8556, five signals itemised |
+| W3 | F2 audit log page + verify button | Rishabh | ✅ done | w3-audit-rishabh | #5 | S4 proved: 16/16, tamper named at exact seq |
+| W4 | F8b resolution review UI + merge | Rishabh | ✅ done | w3-resolution-rishabh | #3 | S3 proved: 30/30, merge is two-step and audited |
 | W4 | F5 analytics + community colouring | Krish | ✅ done | w4-analytics-krish | merged ac0f495 | 47/47 pytest; 662ms/1040ms vs 3s budget |
 | W5 | F6 timeline slider + play | Krish | ✅ done | w5-timeline-krish | merged ac0f495 | ring grows 5->32 nodes; play steps 2019-2025 |
-| W5 | F9 what-if + link prediction | Rishabh | 🔵 in review | w5-analysis-rishabh | — | logic 11/11 pytest, bridge splits 500->250+250; **routes need Krish** |
-| W6 | F10 LLM query + brief + cache | Rishabh | 🔵 in review | w6-llm-rishabh | — | 21/21; four scripted queries answer with no API key |
+| W5 | F9 what-if + link prediction | Rishabh | ✅ done | w5-analysis-rishabh | #4 | logic 11/11 pytest, bridge splits 500->250+250; **routes need Krish** |
+| W6 | F10 LLM query + brief + cache | Rishabh | ✅ done | w6-llm-rishabh | #5 | 21/21; four scripted queries answer with no API key |
 | W6 | Integration, loading/empty/error states | Krish | ✅ done | w6-integration-krish | merged ac0f495 | survives backend restart; boundary keeps nav |
+| W6 | F11 stats page + `/api/stats` | Rishabh | 🔵 in review | w7-stats-docs-rishabh | — | 16/16; counts differ per login |
 | W7 | Freeze, README, rehearsal, deck | Both | ⬜ not started | — | — | — |
 
 Status values: ⬜ not started · 🟡 in progress · 🔵 in review · ✅ done
@@ -167,3 +168,4 @@ re-litigates them.
 | 2026-09-30 | Rishabh | main.py | W3 F8a. Two lines mounting `routers/resolution.py`. | no |
 | 2026-09-30 | Rishabh | App.jsx | W5 F9. Added an `/analysis` route and one nav entry for `AnalysisPanel`, which PRD Section 11 gives no page. | no |
 | 2026-09-30 | Rishabh | main.py | W6 F10. Two lines mounting `routers/query.py`. | no |
+| 2026-09-30 | Rishabh | schemas.py, main.py, CLAUDE.md, .env.example, README.md | F11. Five stats models appended to `schemas.py` (39 total). Two lines mounting `routers/stats.py`. **`CLAUDE.md` Section 4 tree + Section 6 gained `GET /stats`** - F11 is a PRD feature with no endpoint defined, and composing the counts client-side from the capped routes would have been wrong rather than missing. `.env.example` DATABASE_URL moved to **5433** with the reason; both machines hit the native-Postgres clash. README has real setup steps and an architecture diagram. | no |

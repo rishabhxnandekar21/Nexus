@@ -2,13 +2,13 @@ import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import ErrorBoundary from './components/ErrorBoundary'
 import Notice from './components/Notice'
-import Placeholder from './components/Placeholder'
 import { useAuth } from './context/AuthContext'
 import Analysis from './pages/Analysis'
 import AuditLog from './pages/AuditLog'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
 import Resolution from './pages/Resolution'
+import Stats from './pages/Stats'
 
 const NAV = [
   { to: '/', label: 'Dashboard', end: true },
@@ -143,17 +143,7 @@ export default function App() {
                 <Route path="/resolution" element={<Resolution />} />
                 <Route path="/analysis" element={<Analysis />} />
                 <Route path="/audit" element={<AuditLog />} />
-                <Route
-                  path="/stats"
-                  element={
-                    <Placeholder
-                      title="Stats"
-                      owner="Rishabh"
-                      week="W6–W7"
-                      description="Counts by entity type, relationships by agency, and the audit chain status."
-                    />
-                  }
-                />
+                <Route path="/stats" element={<Stats />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Shell>
