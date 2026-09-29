@@ -4,8 +4,10 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Notice from './components/Notice'
 import Placeholder from './components/Placeholder'
 import { useAuth } from './context/AuthContext'
+import AuditLog from './pages/AuditLog'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
+import Resolution from './pages/Resolution'
 
 const NAV = [
   { to: '/', label: 'Dashboard', end: true },
@@ -136,28 +138,8 @@ export default function App() {
             <Shell>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
-                <Route
-                  path="/resolution"
-                  element={
-                    <Placeholder
-                      title="Resolution queue"
-                      owner="Rishabh"
-                      week="W3–W4"
-                      description="Proposed duplicate identities, reviewed and confirmed by a human. Nothing ever auto-merges."
-                    />
-                  }
-                />
-                <Route
-                  path="/audit"
-                  element={
-                    <Placeholder
-                      title="Audit log"
-                      owner="Rishabh"
-                      week="W3"
-                      description="The SHA-256 hash chain, with a verify button that reports the exact row if it has been tampered with."
-                    />
-                  }
-                />
+                <Route path="/resolution" element={<Resolution />} />
+                <Route path="/audit" element={<AuditLog />} />
                 <Route
                   path="/stats"
                   element={
