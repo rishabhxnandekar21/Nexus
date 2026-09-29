@@ -3,6 +3,89 @@
 > Only Krish writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-29 · W5 F6 timeline slider · `w5-timeline-krish`
+
+**Done**
+- `components/Timeline.jsx` - dual-handle year range, play/pause, "whole
+  period" reset, year ticks
+- `Dashboard` filters the loaded elements in a `useMemo` keyed on the
+  debounced range; `index.css` carries the two-input slider styling
+
+**Filtering is client-side, deliberately**
+`CLAUDE.md` Phase 6 asks for exactly this. The server-side date filter exists
+and is tested from W2, but refetching on every drag would make the slider
+crawl and the play animation stutter. The client uses the **same overlap
+predicate** as the backend, so the two cannot disagree: an edge is in the
+window if `valid_from <= end` and (`valid_to` is null or `valid_to >= start`).
+
+Debounce is 150ms, per the PRD. Nodes with no edges at all are never filtered
+out - they carry no dates, so blinking them in and out would be noise.
+
+**Verified**
+
+Whole network, end handle swept across the range:
+
+| year | nodes | edges |
+|---|---|---|
+| 2019 | 146 | 44 |
+| 2021 | 268 | 160 |
+| 2023 | 346 | 272 |
+| 2025 | 402 | 410 |
+
+Centred on the Scenario A ring centre, the same sweep gives **5 nodes / 3
+edges in 2019 growing to 32 / 38 by 2025** - F6's "the seeded crime ring
+visibly grows from 3 nodes to its full size". That is **S5a**.
+
+- **Play** rewinds to 2019, advances one year per tick through 2025, shows
+  Pause while running and stops itself at the end.
+- Handles cannot cross - dragging the end below the start clamps both.
+- "Whole period" resets and disables itself at full range.
+- 47 pytest still passing, oxlint clean, build succeeds, chain valid at 78.
+
+**A property of the data worth knowing before the demo**
+**The start handle barely changes anything, and that is correct.** Every one
+of the 38 edges in the ring view has `valid_to = null`, so under overlap
+semantics a relationship that began in 2019 is still active in 2025 - raising
+the start year excludes almost nothing. The growth story comes from the end
+handle, which is what Play drives. Rishabh: if you want the start handle to
+bite, `seed.py` would need to close more relationships with a `valid_to`.
+Not a bug, but a judge may drag the left handle and see nothing happen.
+
+**Known limitation, labelled in the UI**
+Top connectors are computed server-side over the whole period, so they do not
+follow the slider. `CLAUDE.md` Section 6 defines `/graph/analytics` with
+`center` and `depth` only, and recomputing betweenness on every drag would
+stall the slider anyway. The panel now says so on screen when a narrower range
+is selected. Worth revisiting in the W6 integration pass.
+
+**Files touched**
+- `frontend/src/components/Timeline.jsx` (new), `frontend/src/pages/Dashboard.jsx`,
+  `frontend/src/index.css`, `PROGRESS.md`, `progress/krish.md`
+
+**Next**
+- W6 integration pass - loading, empty and error states across every screen.
+  My last task before W7.
+
+**For Rishabh - the 300-line guideline needs a joint decision**
+Five files are now over `CLAUDE.md` Section 4's ~300 lines:
+
+| file | lines |
+|---|---|
+| `seed.py` | 487 |
+| `Dashboard.jsx` | 429 |
+| `graph.py` | 401 |
+| `schemas.py` | 401 |
+| `routers/graph.py` | 375 |
+
+We have each justified our own individually, which is how a guideline quietly
+stops meaning anything. It is five files now, not one. Either we raise the
+number and say why, or we agree which of these genuinely should split. I lean
+towards raising it: `schemas.py` is one list of contracts, `seed.py` is mostly
+name pools, and `routers/graph.py` loses ~80 lines the moment the last stub
+goes. But it should be a decision in the log, not five separate excuses.
+
+---
+
 ### 2026-09-29 · W4 F5 analytics · `w4-analytics-krish`
 
 Two more endpoints off the stubs. Only what-if and predict are left, and those

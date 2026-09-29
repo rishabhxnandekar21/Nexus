@@ -12,3 +12,45 @@ body,
 body {
   background-color: var(--color-slate-900);
 }
+
+/* Timeline (F6): two range inputs stacked on one track. The inputs cover the
+   whole width so both handles reach the ends, which would make the upper one
+   swallow every click - so the track ignores the pointer and only the thumbs
+   take it. Both vendor prefixes are needed; they cannot be combined into one
+   rule, because a selector a browser does not recognise invalidates the
+   whole block. */
+.timeline-range {
+  pointer-events: none;
+}
+.timeline-range::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  border: 2px solid #0ea5e9;
+  cursor: pointer;
+  margin-top: -6px;
+}
+.timeline-range::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  border: 2px solid #0ea5e9;
+  cursor: pointer;
+}
+.timeline-range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+.timeline-range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+}
+.timeline-range::-moz-range-track {
+  height: 4px;
+  background: transparent;
+}

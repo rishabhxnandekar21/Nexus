@@ -4,10 +4,25 @@ import client from '../api/client'
 import EntityPanel from '../components/EntityPanel'
 import GraphView from '../components/GraphView'
 import SearchBar from '../components/SearchBar'
+import Timeline from '../components/Timeline'
 import { useAuth } from '../context/AuthContext'
 
 const EMPTY = { nodes: [], edges: [] }
 const NO_METRICS = { metrics: [], top_connectors: [], community_count: 0 }
+// Used only if the loaded graph carries no dated edges at all.
+const FALLBACK_SPAN = [2019, 2025]
+const DEBOUNCE_MS = 150
+
+/** Holds a value back until it stops changing - the slider updates its handle
+ *  every pixel, but the graph should only re-filter once you pause. */
+function useDebounced(value, ms) {
+  const [settled, setSettled] = useState(value)
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value), ms)
+    return () => clearTimeout(timer)
+  }, [value, ms])
+  return settled
+}
 const SIZE_OPTIONS = [
   ['degree', 'Degree'],
   ['betweenness', 'Betweenness'],
@@ -27,6 +42,8 @@ export default function Dashboard() {
   const [colourBy, setColourBy] = useState('type')
   const [sizeBy, setSizeBy] = useState('degree')
   const [pathEnds, setPathEnds] = useState({ from: null, to: null })
+  const [range, setRange] = useState(null)
+  const [playing, setPlaying] = useState(false)
 
   // One piece of state per request, stamped with the request it answers, so
   // "loading" is derived at render time rather than set at the top of an
@@ -134,6 +151,46 @@ export default function Dashboard() {
     return [...sizes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id]) => id)
   }, [analytics])
 
+  // --- timeline (F6) -------------------------------------------------------
+  // The span comes from the data rather than a hardcoded 2019-2025, so a
+  // centred subgraph gets a slider that covers what it actually contains.
+  const [minYear, maxYear] = useMemo(() => {
+    const years = graph.edges
+      .map((e) => Number(String(e.data.valid_from).slice(0, 4)))
+      .filter(Number.isFinite)
+    return years.length ? [Math.min(...years), Math.max(...years)] : FALLBACK_SPAN
+  }, [graph])
+
+  const clamp = (year) => Math.min(maxYear, Math.max(minYear, year))
+  const fromYear = range ? clamp(range[0]) : minYear
+  const toYear = range ? clamp(range[1]) : maxYear
+  const settled = useDebounced(`${fromYear}|${toYear}`, DEBOUNCE_MS)
+
+  // Filtering is client-side, per CLAUDE.md Phase 6: the server date filter
+  // exists and is tested, but refetching on every drag would make the slider
+  // crawl and the play animation stutter. Same overlap predicate as the
+  // backend - an edge that began before the window and never ended is still
+  // true inside it.
+  const visible = useMemo(() => {
+    const [start, end] = settled.split('|').map(Number)
+    if (start <= minYear && end >= maxYear) return graph
+    const lower = `${start}-01-01`
+    const upper = `${end}-12-31`
+    const edges = graph.edges.filter(
+      (e) => e.data.valid_from <= upper && (!e.data.valid_to || e.data.valid_to >= lower),
+    )
+    const inWindow = new Set(edges.flatMap((e) => [e.data.source, e.data.target]))
+    // A node with no edges at all carries no dates, so it should not blink in
+    // and out as the window moves - it is simply always there.
+    const everLinked = new Set(graph.edges.flatMap((e) => [e.data.source, e.data.target]))
+    return {
+      nodes: graph.nodes.filter(
+        (n) => inWindow.has(n.data.id) || !everLinked.has(n.data.id),
+      ),
+      edges,
+    }
+  }, [graph, settled, minYear, maxYear])
+
   const recentre = useCallback((id) => {
     setCenterId(id)
     setSelectedId(id)
@@ -155,7 +212,7 @@ export default function Dashboard() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-slate-400">
-            {graph.nodes.length} nodes · {graph.edges.length} edges
+            {visible.nodes.length} nodes · {visible.edges.length} edges
             {analytics.community_count > 0 && ` · ${analytics.community_count} communities`}
           </span>
           {centerId != null && (
@@ -208,6 +265,19 @@ export default function Dashboard() {
         />
       )}
 
+      <Timeline
+        min={minYear}
+        max={maxYear}
+        value={[fromYear, toYear]}
+        onChange={(next) =>
+          setRange((prev) =>
+            typeof next === 'function' ? next(prev ?? [minYear, maxYear]) : next,
+          )
+        }
+        playing={playing}
+        onPlayingChange={setPlaying}
+      />
+
       <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
         <div>
           {loading ? (
@@ -216,7 +286,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <GraphView
-              elements={graph}
+              elements={visible}
               metrics={metrics}
               colourBy={colourBy}
               sizeBy={sizeBy}
@@ -231,7 +301,11 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-5">
-          <TopConnectors items={analytics.top_connectors} onPick={recentre} />
+          <TopConnectors
+            items={analytics.top_connectors}
+            onPick={recentre}
+            wholePeriod={fromYear > minYear || toYear < maxYear}
+          />
           {/* key remounts on a new selection, so the panel's initial state is
               derived rather than reset inside its effect. */}
           <EntityPanel
@@ -277,7 +351,7 @@ function Toggle({ on, onClick, disabled, children }) {
 }
 
 /** Five highest-betweenness nodes in view, per PRD F5. */
-function TopConnectors({ items, onPick }) {
+function TopConnectors({ items, onPick, wholePeriod }) {
   if (!items.length) return null
   return (
     <section className="rounded-lg border border-slate-700 bg-slate-800 p-4">
@@ -287,6 +361,12 @@ function TopConnectors({ items, onPick }) {
       <p className="mt-1 text-xs text-slate-500">
         Most shortest paths run through these. Removing one fragments the network most.
       </p>
+      {wholePeriod && (
+        <p className="mt-1 text-xs text-amber-300/80">
+          Computed over the whole period, not the selected years — recomputing
+          betweenness on every drag would stall the slider.
+        </p>
+      )}
       <ol className="mt-2 space-y-1">
         {items.map((item, index) => (
           <li key={item.entity_id} className="flex items-baseline gap-2 text-sm">
