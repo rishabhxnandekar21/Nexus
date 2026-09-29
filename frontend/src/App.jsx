@@ -4,6 +4,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Notice from './components/Notice'
 import Placeholder from './components/Placeholder'
 import { useAuth } from './context/AuthContext'
+import Analysis from './pages/Analysis'
 import AuditLog from './pages/AuditLog'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
@@ -12,6 +13,7 @@ import Resolution from './pages/Resolution'
 const NAV = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/resolution', label: 'Resolution' },
+  { to: '/analysis', label: 'Analysis' },
   { to: '/audit', label: 'Audit log' },
   { to: '/stats', label: 'Stats' },
 ]
@@ -139,6 +141,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/resolution" element={<Resolution />} />
+                <Route path="/analysis" element={<Analysis />} />
                 <Route path="/audit" element={<AuditLog />} />
                 <Route
                   path="/stats"

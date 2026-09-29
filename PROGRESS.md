@@ -34,7 +34,7 @@
 | W4 | F8b resolution review UI + merge | Rishabh | 🔵 in review | w3-resolution-rishabh | — | S3 proved: 30/30, merge is two-step and audited |
 | W4 | F5 analytics + community colouring | Krish | ✅ done | w4-analytics-krish | merged ac0f495 | 47/47 pytest; 662ms/1040ms vs 3s budget |
 | W5 | F6 timeline slider + play | Krish | ✅ done | w5-timeline-krish | merged ac0f495 | ring grows 5->32 nodes; play steps 2019-2025 |
-| W5 | F9 what-if + link prediction | Rishabh | 🟡 Rishabh | w5-analysis-rishabh | — | — |
+| W5 | F9 what-if + link prediction | Rishabh | 🔵 in review | w5-analysis-rishabh | — | logic 11/11 pytest, bridge splits 500->250+250; **routes need Krish** |
 | W6 | F10 LLM query + brief + cache | Rishabh | 🟡 Rishabh | w6-llm-rishabh | — | — |
 | W6 | Integration, loading/empty/error states | Krish | ✅ done | w6-integration-krish | merged ac0f495 | survives backend restart; boundary keeps nav |
 | W7 | Freeze, README, rehearsal, deck | Both | ⬜ not started | — | — | — |
@@ -105,7 +105,49 @@ your own heading. Delete your own entries once resolved.
 
 ### From Rishabh
 
-*(none)*
+**REQUEST · `app/routers/graph.py` · blocks demo criterion S5b**
+
+`POST /graph/whatif` and `GET /graph/predict` are still the W1-7 stubs running on
+the hardcoded `_ENTITIES` / `_RELATIONSHIPS` set, so they 404 on any real seeded
+id. The real logic is now in `app/analysis.py`, which is mine, but both routes
+live in your file so I have not touched them.
+
+Each body becomes three lines:
+
+```python
+from app import analysis
+from app.graph import build_graph
+
+@router.post("/whatif", response_model=WhatIfResponse)
+def what_if(payload: WhatIfRequest,
+            user: User = Depends(audited("whatif", "graph")),
+            db: Session = Depends(get_db)) -> WhatIfResponse:
+    graph = build_graph(db, user)
+    return WhatIfResponse(**analysis.what_if(graph, payload.remove_entity_ids))
+
+@router.get("/predict", response_model=PredictionResponse)
+def predict_links(entity_id: int = Query(), k: int = Query(default=5, ge=1, le=20),
+                  user: User = Depends(audited("predict", "graph")),
+                  db: Session = Depends(get_db)) -> PredictionResponse:
+    if not can_see_entity(db, user, entity_id):
+        raise HTTPException(404, f"no entity with id {entity_id}")
+    graph = build_graph(db, user)
+    return PredictionResponse(entity_id=entity_id,
+                              predictions=[PredictionOut(**p)
+                                           for p in analysis.predict_links(graph, entity_id, k)])
+```
+
+`analysis.what_if` returns exactly the `WhatIfResponse` shape and
+`analysis.predict_links` exactly `PredictionOut`, so no mapping is needed. It
+copies the graph before removing nodes, so your graph object is untouched.
+
+Verified against the seeded data: removing the Scenario C bridge as admin takes
+the largest component from 500 to **250 + 250**, and as an investigator 317 to
+**169 + 148**, in 497ms and 220ms. `tests/test_analysis.py` covers it, 11 tests.
+
+Also: predicted links want to render as dashed edges in `GraphView.jsx`, which is
+yours. `GraphEdgeData.predicted` already exists for it. My panel lists them with
+dashed borders in the meantime. Not urgent - the list is demonstrable on its own.
 
 ---
 
@@ -123,3 +165,4 @@ re-litigates them.
 | 2026-09-29 | Rishabh | auth.py, dev_users.py | W2 F7. `auth.py` docstring line now says `seed.py` instead of `dev_users.py` - one comment line, no behaviour change. **`backend/dev_users.py` deleted**; `seed.py` supersedes it and keeps the same `investigator`/`admin` usernames and passwords, so nothing that used it breaks. | yes - run `python seed.py --reset` |
 | 2026-09-29 | Rishabh | main.py | W3 F2. Two lines mounting `routers/audit.py`. | no |
 | 2026-09-30 | Rishabh | main.py | W3 F8a. Two lines mounting `routers/resolution.py`. | no |
+| 2026-09-30 | Rishabh | App.jsx | W5 F9. Added an `/analysis` route and one nav entry for `AnalysisPanel`, which PRD Section 11 gives no page. | no |
