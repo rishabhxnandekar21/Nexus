@@ -59,7 +59,7 @@ time.
 
 Reference brief: Smart India Hackathon 2026, Problem Statement **26189**
 (AI-Powered Criminal Network Analysis System), theme *Blockchain &
-Cybersecurity*. Team: **Delulu Developers**.
+Cybersecurity*. Team: **Apostrophe**.
 
 ### The five things the demo must show
 
@@ -222,7 +222,10 @@ Nexus/
             ├── SearchBar.jsx
             ├── NLQueryBox.jsx
             ├── AnalysisPanel.jsx    # what-if / prediction results
-            └── EntityPanel.jsx
+            ├── EntityPanel.jsx
+            ├── ErrorBoundary.jsx    # catches a render crash, keeps the app up
+            ├── Notice.jsx           # shared loading / empty / error states
+            └── Placeholder.jsx      # stands in for a page not written yet
 ```
 
 Keep files under ~300 lines. If one grows past that, split it by feature.

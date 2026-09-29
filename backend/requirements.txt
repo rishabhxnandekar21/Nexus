@@ -11,3 +11,4 @@ networkx
 pandas
 google-generativeai
 python-dotenv
+pytest

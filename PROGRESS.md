@@ -22,21 +22,21 @@
 | W1 | Repo, scaffold, Docker Postgres | Both | ✅ done | phase-0-scaffold-rishabh | #1 | `/api/health` ok, db connected |
 | W1 | `models.py` — all six tables | Both | ✅ done | phase-0-scaffold-rishabh | #1 | 6 tables + 5 indexes in psql |
 | W1 | `auth.py` — JWT + roles | Both | ✅ done | phase-2-auth-rishabh | #1 | 18/18 checks: login, /me, 401s, 403 |
-| W1 | `audit.py` — hash chain + pytest | Both | 🟡 in progress | w1-5-audit-krish | — | — |
-| W1 | `schemas.py` — all contracts | Both | 🟡 in progress | w1-6-schemas-krish | — | — |
-| W1 | Router stubs returning fake data | Both | ⬜ not started | w1-7-stubs-krish (claimed) | — | — |
-| W1 | Frontend shell, AuthContext, login | Both | 🟡 in progress | w1-8-frontend-krish | — | — |
+| W1 | `audit.py` — hash chain + pytest | Both | 🔵 in review | w1-5-audit-krish | — | 7/7 pytest; tamper detected at exact seq |
+| W1 | `schemas.py` — all contracts | Both | 🔵 in review | w1-6-schemas-krish | — | 34 models; 26 now in /docs, 8 await Rishabh's routers |
+| W1 | Router stubs returning fake data | Both | 🔵 in review | w1-7-stubs-krish | — | Krish's 8 routes live; 16/16 checks incl. 403 |
+| W1 | Frontend shell, AuthContext, login | Both | 🔵 in review | w1-8-frontend-krish | — | login, nav badges, refresh, logout - all live |
 | W2 | F7 `seed.py` + 3 scenarios | Rishabh | 🔵 in review | phase-1-seed-rishabh | — | 3 scenarios pass; digest reproducible; 1.6s |
-| W2 | F3a `graph.py` + `/api/graph` | Krish | 🟡 in progress | w2-graph-krish | — | — |
-| W3 | F3b GraphView, panel, search | Krish | 🟡 in progress | w3-graphview-krish | — | — |
+| W2 | F3a `graph.py` + `/api/graph` | Krish | 🔵 in review | w2-graph-krish | — | re-measured on seed.py: 402 vs 500 nodes, 296-327ms |
+| W3 | F3b GraphView, panel, search | Krish | 🔵 in review | w3-graphview-krish | — | S2 on screen: 402/410 vs 217/92 vs 500 |
 | W3 | F8a resolution scoring + endpoints | Rishabh | ⬜ not started | — | — | — |
 | W3 | F2 audit log page + verify button | Rishabh | ⬜ not started | — | — | — |
 | W4 | F8b resolution review UI + merge | Rishabh | ⬜ not started | — | — | — |
-| W4 | F5 analytics + community colouring | Krish | 🟡 in progress | w4-analytics-krish | — | — |
-| W5 | F6 timeline slider + play | Krish | 🟡 in progress | w5-timeline-krish | — | — |
+| W4 | F5 analytics + community colouring | Krish | 🔵 in review | w4-analytics-krish | — | 47/47 pytest; 662ms/1040ms vs 3s budget |
+| W5 | F6 timeline slider + play | Krish | 🔵 in review | w5-timeline-krish | — | ring grows 5->32 nodes; play steps 2019-2025 |
 | W5 | F9 what-if + link prediction | Rishabh | ⬜ not started | — | — | — |
 | W6 | F10 LLM query + brief + cache | Rishabh | ⬜ not started | — | — | — |
-| W6 | Integration, loading/empty/error states | Krish | 🟡 in progress | w6-integration-krish | — | — |
+| W6 | Integration, loading/empty/error states | Krish | 🔵 in review | w6-integration-krish | — | survives backend restart; boundary keeps nav |
 | W7 | Freeze, README, rehearsal, deck | Both | ⬜ not started | — | — | — |
 
 Status values: ⬜ not started · 🟡 in progress · 🔵 in review · ✅ done
@@ -68,6 +68,16 @@ an existing line.
 | 2026-09-27 | Rishabh | CLAUDE.md | Section 4 tree only: added `analysis.py`, `backend/tests/test_audit.py`, `pages/Stats.jsx`, `components/AnalysisPanel.jsx`. All four are in the PRD Section 11 ownership table but were missing from the tree. Also created `backend/app/` and `backend/app/routers/` with empty `__init__.py`. | no |
 | 2026-09-28 | Rishabh | requirements.txt, models.py, main.py | W1-2 + W1-3. `requirements.txt` = the 13 deps in CLAUDE.md Section 3, nothing added. New `config.py`, `database.py` (Base, engine, SessionLocal, get_db, init_db), `main.py` (CORS for :5173 + GET /api/health), `models.py` (all six tables, the five required indexes, CHECK constraints on role/entity_type/status). | yes - run `python -c "from app.database import init_db; init_db()"` |
 | 2026-09-28 | Rishabh | schemas.py, auth.py, main.py, .env.example | W1-4. New `auth.py` (bcrypt direct + PyJWT, `get_current_user`, `require_admin`). New `schemas.py` with ONLY `UserOut`, `LoginRequest`, `TokenResponse` - **W1-6 should add the remaining ~17 models to this file, not recreate it.** `main.py` gained two lines mounting the auth router. `.env.example` gained a comment about minimum JWT_SECRET length. | no |
+| 2026-09-29 | Krish | schemas.py | W1-6. Added 31 models to `schemas.py`, 34 total - every contract in CLAUDE.md Section 6. Rishabh's three auth models are untouched. `EntityType`/`UserRole`/`ResolutionStatus` are StrEnums derived from the tuples in `models.py`, used on requests only. Cytoscape ids are strings, deliberately. `ResolutionFeature` and `NLQueryFilters` are proposed shapes for Rishabh's JSONB and LLM filters - his to change. | no |
+| 2026-09-29 | Krish | main.py | W1-7. `main.py` gained 3 lines: `entities` and `graph` added to the routers import, and two `include_router` calls. Nothing else in that file touched. New `routers/entities.py` and `routers/graph.py` are stubs over 12 fake records - no database access. **Not audited**: `audit.py` does not exist yet (W1-5), so the stub routes are protected but not logged. Must be revisited when W1-5 lands. | no |
+| 2026-09-29 | Krish | package.json | W1-8. New `frontend/package.json`. **React pinned to 18**, not the 19 the Vite template now ships: `CLAUDE.md` Section 3 says React 18, and `react-cytoscapejs` 2.0.0 does not declare React 19 support - that is Krish's W3 graph canvas, so it is not worth the risk. Vite 8, Tailwind v4 via `@tailwindcss/vite` with no config file, plus `react-router-dom`, `axios`, `cytoscape`, `react-cytoscapejs`. Nothing beyond the Section 3 list. | no |
+| 2026-09-29 | Krish | requirements.txt | W1-5. Added `pytest`, in its own commit per TEAM-WORKFLOW 5.4. Answers Rishabh's W1-4 question - CLAUDE.md Section 8 requires `tests/test_audit.py`, so it was implied by the plan even though Section 3 omits it. | no |
+| 2026-09-29 | Krish | audit.py | W1-5. New shared `app/audit.py`: `compute_hash`, `write_audit`, `verify_chain`, `chain_length`, and an `audited()` route dependency. Payload string is CLAUDE.md Section 5 verbatim. `write_audit` flushes but does not commit - the caller owns the transaction. My 8 W1-7 routes now use `audited(...)` in place of `get_current_user`. **`routers/audit.py` is untouched and still Rishabh's**, so `GET /api/audit` and `/api/audit/verify` do not exist yet. | no |
+| 2026-09-29 | Krish | CLAUDE.md | Team name in Section 1 changed from `Delulu Developers` to `Apostrophe`, to match Rishabh's README edit of 27 Sep. The two documents had disagreed since then. | no |
+| 2026-09-29 | Krish | graph.py, routers/graph.py | W2 F3a. New `app/graph.py` with `build_graph()`, `can_see_entity()` and `to_cytoscape()`. `GET /api/graph` now reads Postgres instead of the fake set - **it returns an empty graph until `seed.py` runs, which is correct, not a failure.** The other four graph routes and all of `routers/entities.py` are still stubs. | no |
+| 2026-09-29 | Krish | dev_data.py | W2 F3a verification. New **temporary** `backend/dev_data.py` loads the 12 stub records into Postgres so the W2 exit criterion can actually be checked - both tokens returned an empty graph before it. **It is not `seed.py` and does not pretend to be**: no scenarios, no volumes, no determinism, no `--reset`/`--verify`. It reads its rows from `routers/entities.py`, so there is one copy of the fake network. Delete it with the stubs when F7 lands. | yes - `python dev_users.py && python dev_data.py` |
+| 2026-09-29 | Krish | dev_data.py (deleted), routers/graph.py, routers/entities.py | W3 F3b. **`dev_data.py` deleted** - `seed.py` replaces it, as agreed. Its twelve fake records moved inline into `routers/graph.py`, which is the only remaining consumer: the four endpoints there that are still stubs (analytics W4; path, what-if, predict W5). `routers/entities.py` is now real and database-backed. Entity visibility is defined once, in `graph.py` as `entity_scope()` / `relationship_scope()`, and search, detail and the graph all use it. | no - `seed.py --reset` covers it |
+| 2026-09-29 | Krish | CLAUDE.md | W6. Section 4 tree only: added `ErrorBoundary.jsx`, `Notice.jsx` and `Placeholder.jsx` under `components/`. All three exist and none were listed - same correction Rishabh made when `analysis.py` was missing. | no |
 
 ---
 
