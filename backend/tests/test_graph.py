@@ -12,7 +12,9 @@ from datetime import date
 import pytest
 from sqlalchemy import delete
 
-from app.graph import NODE_CAP, build_graph, can_see_entity, to_cytoscape
+from app.graph import (
+    NODE_CAP, analyse, build_graph, can_see_entity, shortest_path, to_cytoscape,
+)
 from app.models import Agency, Entity, Relationship, User
 
 
@@ -219,3 +221,98 @@ def test_cytoscape_ids_are_strings_and_edges_line_up(db, world):
 
 def test_node_cap_constant_matches_the_prd():
     assert NODE_CAP == 500
+
+
+# --- analytics and shortest path - F5 ---------------------------------------
+#
+# The world fixture is the path T1 - P1 - P2 - R1 for an admin, which makes
+# every centrality hand-checkable: the two middle nodes carry all the paths,
+# the two ends carry none.
+
+
+def test_analytics_returns_a_metric_for_every_node(db, world):
+    result = analyse(build_graph(db, world["admin"]))
+    assert {m["name"] for m in result["metrics"]} == {"P1", "P2", "T1", "R1"}
+    for m in result["metrics"]:
+        assert set(m) == {
+            "entity_id", "name", "degree", "betweenness", "pagerank", "community",
+        }
+
+
+def test_degree_and_betweenness_match_the_shape_of_the_graph(db, world):
+    by_name = {m["name"]: m for m in analyse(build_graph(db, world["admin"]))["metrics"]}
+    # T1 - P1 - P2 - R1: the ends have one edge, the middles two.
+    assert by_name["T1"]["degree"] == 1
+    assert by_name["R1"]["degree"] == 1
+    assert by_name["P1"]["degree"] == 2
+    assert by_name["P2"]["degree"] == 2
+    # Only the middle nodes lie on paths between other pairs.
+    assert by_name["P1"]["betweenness"] > 0
+    assert by_name["P2"]["betweenness"] > 0
+    assert by_name["T1"]["betweenness"] == 0
+    assert by_name["R1"]["betweenness"] == 0
+
+
+def test_pagerank_sums_to_one(db, world):
+    total = sum(m["pagerank"] for m in analyse(build_graph(db, world["admin"]))["metrics"])
+    assert abs(total - 1.0) < 0.01
+
+
+def test_top_connectors_leaves_out_nodes_no_path_runs_through(db, world):
+    """Five zeros would be a worse answer than two real ones."""
+    top = analyse(build_graph(db, world["admin"]))["top_connectors"]
+    assert {t["name"] for t in top} == {"P1", "P2"}
+    assert all(t["betweenness"] > 0 for t in top)
+
+
+def test_analytics_is_scoped_like_the_graph(db, world):
+    """The officer's centrality is computed over the officer's own view."""
+    officer = analyse(build_graph(db, world["officer"]))
+    assert "R1" not in {m["name"] for m in officer["metrics"]}
+
+
+def test_analytics_on_an_empty_graph_is_empty_not_an_error(db):
+    import networkx as nx
+
+    assert analyse(nx.Graph()) == {
+        "metrics": [], "top_connectors": [], "community_count": 0,
+    }
+
+
+def test_analytics_on_an_edgeless_graph(db, world):
+    """greedy_modularity has nothing to maximise; every node stands alone."""
+    graph = build_graph(db, world["admin"])
+    graph.remove_edges_from(list(graph.edges))
+    result = analyse(graph)
+    assert result["community_count"] == 4
+    assert all(m["betweenness"] == 0 for m in result["metrics"])
+    assert result["top_connectors"] == []
+
+
+def test_shortest_path_across_the_whole_chain(db, world):
+    result = shortest_path(build_graph(db, world["admin"]), world["t1"].id, world["r1"].id)
+    assert result["found"] is True
+    assert result["names"] == ["T1", "P1", "P2", "R1"]
+    assert result["length"] == 3
+    assert result["rel_types"] == ["owns", "family_of", "owns"]
+
+
+def test_shortest_path_to_self_is_zero_hops(db, world):
+    result = shortest_path(build_graph(db, world["admin"]), world["p1"].id, world["p1"].id)
+    assert result["found"] is True
+    assert result["length"] == 0
+
+
+def test_no_path_is_found_false_not_an_exception(db, world):
+    graph = build_graph(db, world["admin"])
+    graph.remove_edges_from(list(graph.edges))
+    result = shortest_path(graph, world["t1"].id, world["r1"].id)
+    assert result["found"] is False
+    assert result["entity_ids"] == []
+
+
+def test_a_path_the_caller_cannot_see_is_not_found(db, world):
+    """R1 is invisible to the officer, so no route reaches it - even though
+    one exists for an admin. Scoping has to hold here too."""
+    result = shortest_path(build_graph(db, world["officer"]), world["p1"].id, world["r1"].id)
+    assert result["found"] is False

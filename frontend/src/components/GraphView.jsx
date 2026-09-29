@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import CytoscapeComponent from 'react-cytoscapejs'
 
 /**
- * The Cytoscape canvas - F3.
+ * The Cytoscape canvas - F3, plus the F5 analytics encodings.
  *
  * Entity type is encoded twice, by SHAPE and by COLOUR, and the shape is the
  * one that actually carries it. Six categories cannot be told apart by hue:
@@ -10,8 +10,10 @@ import CytoscapeComponent from 'react-cytoscapejs'
  * ΔE 1.6 for deuteranopia and 10.6 for normal vision, against floors of 8 and
  * 15. Colour at six categories is decoration. Shape, the always-on label and
  * the legend are what make a node identifiable, including in greyscale and
- * for a colourblind viewer. Colours are the dark-surface steps of the
- * reference categorical palette, all >= 3:1 against this canvas.
+ * for a colourblind viewer.
+ *
+ * Shape stays bound to entity type even when colour switches to community, so
+ * switching the colour encoding never costs you the type.
  */
 
 const TYPES = {
@@ -22,10 +24,15 @@ const TYPES = {
   organization: { colour: '#d55181', shape: 'hexagon', label: 'Organisation' },
   crime_event: { colour: '#008300', shape: 'star', label: 'Crime event' },
 }
-const FALLBACK = { colour: '#94a3b8', shape: 'ellipse', label: 'Other' }
+const UNKNOWN = '#94a3b8'
 
-// Module-level, per CLAUDE.md Section 8: a new object identity on every render
-// makes react-cytoscapejs rebuild the graph and visibly re-shuffle the layout.
+// Four hues, not more: this set is the largest that clears the validator on
+// this surface for all pairs (worst normal-vision ΔE 19.3). Communities have
+// no shape to fall back on, so the count is capped rather than the contrast.
+// Everything outside the four largest communities is grey and labelled so.
+const COMMUNITY_COLOURS = ['#3987e5', '#c98500', '#d55181', '#008300']
+const COMMUNITY_OTHER = '#64748b'
+
 const STYLESHEET = [
   {
     selector: 'node',
@@ -39,33 +46,30 @@ const STYLESHEET = [
       'text-margin-y': 4,
       // Whole-network views run to hundreds of nodes and every label drawn at
       // once is an unreadable smear. Cytoscape drops the label below this
-      // on-screen size, so labels appear as you zoom into a region and the
-      // overview stays a shape you can actually read.
+      // on-screen size, so labels appear as you zoom into a region.
       'min-zoomed-font-size': 9,
-      // Degree drives size, per the F3 acceptance criteria.
-      width: 'mapData(degree, 0, 8, 26, 62)',
-      height: 'mapData(degree, 0, 8, 26, 62)',
+      // Colour and size are computed in JS and carried on the element, so the
+      // encoding can change without swapping the stylesheet - which would
+      // remount the graph and re-run the layout.
+      'background-color': 'data(_colour)',
+      width: 'data(_size)',
+      height: 'data(_size)',
       'border-width': 2,
       'border-color': '#0f172a',
     },
   },
-  ...Object.entries(TYPES).map(([type, { colour, shape }]) => ({
+  ...Object.entries(TYPES).map(([type, { shape }]) => ({
     selector: `node[entity_type = "${type}"]`,
-    style: { 'background-color': colour, shape },
+    style: { shape },
   })),
   {
     // Shared across agencies - a dashed ring, so it is not colour-only either.
     selector: 'node[?is_shared]',
-    style: { 'border-color': '#e2e8f0', 'border-style': 'dashed', 'border-width': 2 },
+    style: { 'border-color': '#e2e8f0', 'border-style': 'dashed' },
   },
-  {
-    selector: 'node.selected',
-    style: { 'border-color': '#f8fafc', 'border-width': 4, 'border-style': 'solid' },
-  },
-  {
-    selector: 'node.centre',
-    style: { 'border-color': '#38bdf8', 'border-width': 4, 'border-style': 'solid' },
-  },
+  { selector: 'node.selected', style: { 'border-color': '#f8fafc', 'border-width': 4 } },
+  { selector: 'node.centre', style: { 'border-color': '#38bdf8', 'border-width': 4 } },
+  { selector: 'node.on-path', style: { 'border-color': '#fbbf24', 'border-width': 5 } },
   {
     selector: 'edge',
     style: {
@@ -84,9 +88,10 @@ const STYLESHEET = [
     },
   },
   {
-    selector: 'edge[?predicted]',
-    style: { 'line-style': 'dashed', 'line-color': '#7c8da5' },
+    selector: 'edge.on-path',
+    style: { 'line-color': '#fbbf24', 'target-arrow-color': '#fbbf24', width: 4 },
   },
+  { selector: 'edge[?predicted]', style: { 'line-style': 'dashed', 'line-color': '#7c8da5' } },
 ]
 
 const LAYOUT = {
@@ -98,30 +103,71 @@ const LAYOUT = {
   nodeDimensionsIncludeLabels: true,
 }
 
-export default function GraphView({ elements, selectedId, centerId, onSelect, onRecentre }) {
+const SIZE_MIN = 26
+const SIZE_MAX = 62
+
+export default function GraphView({
+  elements,
+  metrics,
+  colourBy = 'type',
+  sizeBy = 'degree',
+  topCommunities = [],
+  pathIds = [],
+  selectedId,
+  centerId,
+  onSelect,
+  onRecentre,
+}) {
   const cyRef = useRef(null)
 
-  // Identity only changes when the data does, so the layout does not re-run on
-  // every parent render.
-  const memoElements = useMemo(
-    () => [...elements.nodes, ...elements.edges],
-    [elements],
-  )
+  const memoElements = useMemo(() => {
+    const rank = new Map(topCommunities.map((c, i) => [c, i]))
+    const values = elements.nodes.map((n) => metricValue(metrics, n.data.id, sizeBy, n.data.degree))
+    const highest = Math.max(1, ...values)
+
+    const nodes = elements.nodes.map((n) => {
+      const metric = metrics?.get?.(Number(n.data.id))
+      const value = metricValue(metrics, n.data.id, sizeBy, n.data.degree)
+      const colour =
+        colourBy === 'community'
+          ? (rank.has(metric?.community)
+              ? COMMUNITY_COLOURS[rank.get(metric.community)]
+              : COMMUNITY_OTHER)
+          : (TYPES[n.data.entity_type]?.colour ?? UNKNOWN)
+      return {
+        data: {
+          ...n.data,
+          _colour: colour,
+          // Square-rooted so one hub does not flatten everything else to a dot.
+          _size: SIZE_MIN + (SIZE_MAX - SIZE_MIN) * Math.sqrt(value / highest),
+        },
+      }
+    })
+    return [...nodes, ...elements.edges]
+  }, [elements, metrics, colourBy, sizeBy, topCommunities])
 
   useEffect(() => {
     const cy = cyRef.current
     if (!cy) return
-    cy.nodes().removeClass('selected centre')
+    cy.elements().removeClass('selected centre on-path')
     if (selectedId != null) cy.getElementById(String(selectedId)).addClass('selected')
     if (centerId != null) cy.getElementById(String(centerId)).addClass('centre')
-  }, [selectedId, centerId, memoElements])
+    if (pathIds.length > 1) {
+      pathIds.forEach((id) => cy.getElementById(String(id)).addClass('on-path'))
+      for (let i = 0; i < pathIds.length - 1; i += 1) {
+        cy.edges().filter((e) => {
+          const pair = [e.data('source'), e.data('target')].map(Number)
+          return pair.includes(pathIds[i]) && pair.includes(pathIds[i + 1])
+        }).addClass('on-path')
+      }
+    }
+  }, [selectedId, centerId, pathIds, memoElements])
 
   function register(cy) {
     if (cyRef.current === cy) return
     cyRef.current = cy
     cy.on('tap', 'node', (event) => onSelect(Number(event.target.id())))
     cy.on('dbltap', 'node', (event) => onRecentre(Number(event.target.id())))
-    // Tapping the background clears the panel.
     cy.on('tap', (event) => {
       if (event.target === cy) onSelect(null)
     })
@@ -152,16 +198,26 @@ export default function GraphView({ elements, selectedId, centerId, onSelect, on
           wheelSensitivity={0.2}
         />
       </div>
-      <Legend />
+      {colourBy === 'community' ? (
+        <CommunityLegend count={topCommunities.length} />
+      ) : (
+        <TypeLegend />
+      )}
       <p className="mt-2 text-xs text-slate-500">
-        Click a node for its details. Double-click to re-centre the graph on it.
-        Node size is its number of connections.
+        Click a node for its details. Double-click to re-centre on it. Shape is
+        always the entity type; node size is {sizeBy}.
       </p>
     </div>
   )
 }
 
-function Legend() {
+function metricValue(metrics, id, sizeBy, fallbackDegree) {
+  const metric = metrics?.get?.(Number(id))
+  if (!metric) return sizeBy === 'degree' ? (fallbackDegree ?? 0) : 0
+  return metric[sizeBy] ?? 0
+}
+
+function TypeLegend() {
   return (
     <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2" aria-label="Node types">
       {Object.entries(TYPES).map(([type, { colour, label }]) => (
@@ -172,13 +228,32 @@ function Legend() {
       ))}
       <li className="flex items-center gap-1.5 text-xs text-slate-400">
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-          <circle
-            cx="7" cy="7" r="5" fill="none"
-            stroke="#e2e8f0" strokeWidth="1.5" strokeDasharray="2 2"
-          />
+          <circle cx="7" cy="7" r="5" fill="none" stroke="#e2e8f0" strokeWidth="1.5" strokeDasharray="2 2" />
         </svg>
         Shared across agencies
       </li>
+    </ul>
+  )
+}
+
+function CommunityLegend({ count }) {
+  return (
+    <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2" aria-label="Communities">
+      {COMMUNITY_COLOURS.slice(0, count).map((colour, i) => (
+        <li key={colour} className="flex items-center gap-1.5 text-xs text-slate-400">
+          <svg width="14" height="14" aria-hidden="true">
+            <circle cx="7" cy="7" r="5.5" fill={colour} />
+          </svg>
+          Community {i + 1}
+        </li>
+      ))}
+      <li className="flex items-center gap-1.5 text-xs text-slate-400">
+        <svg width="14" height="14" aria-hidden="true">
+          <circle cx="7" cy="7" r="5.5" fill={COMMUNITY_OTHER} />
+        </svg>
+        All other communities
+      </li>
+      <li className="text-xs text-slate-500">Shape still shows the entity type.</li>
     </ul>
   )
 }
@@ -200,7 +275,7 @@ function ShapeSwatch({ type, colour }) {
   }
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-      {shapes[type] ?? <circle cx="7" cy="7" r="5.5" fill={FALLBACK.colour} />}
+      {shapes[type] ?? <circle cx="7" cy="7" r="5.5" fill={UNKNOWN} />}
     </svg>
   )
 }

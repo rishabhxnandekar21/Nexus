@@ -258,3 +258,144 @@ def to_cytoscape(graph: nx.Graph) -> dict:
         for src, dst, attrs in graph.edges(data=True)
     ]
     return {"nodes": nodes, "edges": edges}
+
+
+# --------------------------------------------------------------------------
+# Analytics - F5
+#
+# Classical NetworkX, deliberately: CLAUDE.md Section 2 rules out GNNs, and
+# degree, betweenness, PageRank and greedy modularity are all things that can
+# be explained in a viva in one sentence each. Everything here runs on the
+# graph build_graph() already scoped, so an investigator's centrality is
+# computed over their own view rather than the whole network - the numbers
+# answer "who matters in what you can see", which is the honest question.
+# --------------------------------------------------------------------------
+
+TOP_CONNECTORS = 5
+
+
+def _pagerank(graph: nx.Graph, damping: float = 0.85,
+              max_iter: int = 100, tol: float = 1.0e-6) -> dict[int, float]:
+    """PageRank by power iteration.
+
+    Not `nx.pagerank`: NetworkX 3.x implements it on scipy sparse matrices,
+    and scipy is not in the CLAUDE.md Section 3 dependency list - Section 2
+    says not to add one without asking. This is the textbook iteration in a
+    dozen lines, it is deterministic, and it is easier to defend in a viva
+    than "the library did it". Same damping and tolerance as the NetworkX
+    default, so the numbers are comparable if scipy is ever added.
+
+    Nodes with no edges are dangling: their rank is redistributed uniformly
+    rather than lost, which is what keeps the total at 1.
+    """
+    count = graph.number_of_nodes()
+    if count == 0:
+        return {}
+    rank = {node: 1.0 / count for node in graph}
+    teleport = (1.0 - damping) / count
+
+    for _ in range(max_iter):
+        leaked = damping * sum(
+            rank[node] for node in graph if graph.degree(node) == 0
+        ) / count
+        updated = {
+            node: teleport + leaked + damping * sum(
+                rank[peer] / graph.degree(peer) for peer in graph.neighbors(node)
+            )
+            for node in graph
+        }
+        delta = sum(abs(updated[node] - rank[node]) for node in graph)
+        rank = updated
+        if delta < tol * count:
+            break
+    return rank
+
+
+def analyse(graph: nx.Graph) -> dict:
+    """Per-node centrality and community, plus the top connectors in view.
+
+    Shaped for AnalyticsResponse. Returns plain dicts rather than Pydantic
+    models so analysis.py can consume it without importing schemas.
+    """
+    if graph.number_of_nodes() == 0:
+        return {"metrics": [], "top_connectors": [], "community_count": 0}
+
+    if graph.number_of_edges() == 0:
+        # Every centrality is zero on an edgeless graph, and greedy modularity
+        # has nothing to maximise. Each node is its own community.
+        metrics = [
+            {
+                "entity_id": node,
+                "name": attrs.get("name", str(node)),
+                "degree": 0,
+                "betweenness": 0.0,
+                "pagerank": round(1 / graph.number_of_nodes(), 6),
+                "community": index,
+            }
+            for index, (node, attrs) in enumerate(graph.nodes(data=True))
+        ]
+        return {
+            "metrics": metrics,
+            "top_connectors": [],
+            "community_count": len(metrics),
+        }
+
+    betweenness = nx.betweenness_centrality(graph)
+    pagerank = _pagerank(graph)
+
+    # Greedy modularity, per PRD F5. It handles disconnected graphs, and the
+    # seeded data always has some isolates.
+    communities = nx.community.greedy_modularity_communities(graph)
+    community_of = {
+        node: index for index, group in enumerate(communities) for node in group
+    }
+
+    metrics = [
+        {
+            "entity_id": node,
+            "name": attrs.get("name", str(node)),
+            "degree": graph.degree(node),
+            "betweenness": round(betweenness[node], 6),
+            "pagerank": round(pagerank[node], 6),
+            "community": community_of.get(node, 0),
+        }
+        for node, attrs in graph.nodes(data=True)
+    ]
+
+    ranked = sorted(metrics, key=lambda m: m["betweenness"], reverse=True)
+    return {
+        "metrics": metrics,
+        "top_connectors": [
+            {"entity_id": m["entity_id"], "name": m["name"],
+             "betweenness": m["betweenness"]}
+            for m in ranked[:TOP_CONNECTORS]
+            # A node no path runs through is not a connector; listing five
+            # zeros would be worse than listing fewer.
+            if m["betweenness"] > 0
+        ],
+        "community_count": len(communities),
+    }
+
+
+def shortest_path(graph: nx.Graph, from_id: int, to_id: int) -> dict:
+    """Shortest path between two entities, shaped for PathResponse.
+
+    `found: false` rather than a 404 - two people with no connection between
+    them is a real answer to the question, not a failure to answer it.
+    """
+    if from_id not in graph or to_id not in graph:
+        return {"found": False, "entity_ids": [], "names": [], "rel_types": [], "length": 0}
+    try:
+        chain = nx.shortest_path(graph, from_id, to_id)
+    except nx.NetworkXNoPath:
+        return {"found": False, "entity_ids": [], "names": [], "rel_types": [], "length": 0}
+
+    return {
+        "found": True,
+        "entity_ids": chain,
+        "names": [graph.nodes[n].get("name", str(n)) for n in chain],
+        "rel_types": [
+            graph.edges[a, b].get("rel_type", "") for a, b in zip(chain, chain[1:])
+        ],
+        "length": len(chain) - 1,
+    }

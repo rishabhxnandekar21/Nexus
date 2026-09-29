@@ -3,6 +3,87 @@
 > Only Krish writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-29 · W4 F5 analytics · `w4-analytics-krish`
+
+Two more endpoints off the stubs. Only what-if and predict are left, and those
+are W5.
+
+**Done**
+- `graph.py` - `analyse()` (degree, betweenness, PageRank, greedy-modularity
+  communities, top connectors) and `shortest_path()`
+- `GET /api/graph/analytics` and `GET /api/graph/path` are now real
+- Frontend: colour-by-community toggle, size-by-degree/betweenness/PageRank,
+  a top-connectors list, and shortest-path highlighting
+
+**PageRank is hand-written, and that is deliberate**
+`nx.pagerank` in NetworkX 3.x is implemented on scipy sparse matrices, and
+**scipy is not in the `CLAUDE.md` Section 3 list** - Section 2 says not to add
+a dependency without asking. Rather than add a large one unilaterally for one
+function, `_pagerank()` is the textbook power iteration in a dozen lines, same
+damping and tolerance as the NetworkX default so the numbers stay comparable.
+It sums to 1.0 exactly on the seeded data. Rishabh: say if you would rather
+add scipy and delete it.
+
+**Analytics run on the caller's own scoped graph, not the whole network.** An
+investigator's "most central person" should be the most central person they
+can see - that is the only number they could act on, and it makes S2 visible
+in a second way.
+
+**Verified on the seeded data**
+
+| | metrics | communities | time | PRD budget |
+|---|---|---|---|---|
+| investigator | 402 | 95 | **662ms** | 3s |
+| admin | 500 | 13 | **1040ms** | 3s |
+
+- PageRank totals **1.0** for both.
+- Top connectors differ by role, and the same person scores differently:
+  Nitin Ramanbhai Chauhan is 0.318 for the investigator and 0.512 for the
+  admin, because they are central in different graphs.
+- **That node is Rishabh's Scenario C bridge (id 650).** Betweenness picking it
+  out independently is a good cross-check on his seeding and a strong line for
+  the viva.
+- Shortest path: admin and investigator both get a 3-hop route between the same
+  two people, **through different intermediaries**, because they travel over
+  different visible edges. Cross-agency endpoint gives 404 not 403; missing
+  entity 404; no token 401.
+- 47 pytest passing (11 new), oxlint clean, production build succeeds, audit
+  chain valid at 63 rows.
+
+**Community colour is capped at four, on purpose**
+Communities have no shape channel to fall back on - shape is already entity
+type and stays that way when you switch to community colouring. Four is the
+largest set that clears the palette validator for all pairs on this surface
+(worst normal-vision ΔE 19.3). The four largest communities get a colour, the
+rest are grey and the legend says so. With 95 communities in the
+investigator's view, colouring them all would have been noise anyway.
+
+**Three defects found while verifying, all fixed**
+- Removing the two now-dead stub helpers took the `@router.get("")` decorator
+  with them and **silently unmounted `GET /api/graph`** - the main endpoint.
+  Caught by asserting the path count, not by reading the diff.
+- Top-connector scores rendered as `0.000` in fragmented views. The values
+  were real but tiny; three decimals made them look broken.
+- "1 hops".
+
+**Files touched**
+- `backend/app/graph.py`, `backend/app/routers/graph.py`,
+  `backend/tests/test_graph.py`, `frontend/src/components/GraphView.jsx`,
+  `frontend/src/components/EntityPanel.jsx`, `frontend/src/pages/Dashboard.jsx`,
+  `PROGRESS.md`, `progress/krish.md`
+
+**Next**
+- W5 F6 timeline slider. The backend date filtering it needs is already done
+  and tested from W2.
+
+**For Rishabh**
+- `analyse(graph)` and `shortest_path(graph, a, b)` in `graph.py` take the
+  graph `build_graph()` returns, so `analysis.py` can reuse both for W5.
+- Scipy question above - your call.
+- Still twelve of my commits unmerged, now spanning W1-6 to W4.
+
+---
+
 ### 2026-09-29 · W3 F3b on real data, and the seed digest · `w3-graphview-krish`
 
 **Rishabh - the digest matches.**

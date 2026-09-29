@@ -18,18 +18,16 @@ from sqlalchemy.orm import Session
 
 from app.audit import audited
 from app.database import get_db
-from app.graph import build_graph, can_see_entity, to_cytoscape
+from app.graph import analyse, build_graph, can_see_entity, shortest_path, to_cytoscape
 from app.models import User
 from app.schemas import (
     AnalyticsResponse,
     BetweennessShift,
     ComponentStats,
     GraphResponse,
-    NodeMetrics,
     PathResponse,
     PredictionOut,
     PredictionResponse,
-    TopConnector,
     WhatIfRequest,
     WhatIfResponse,
 )
@@ -166,10 +164,6 @@ def _metric(entity_id: int) -> dict:
     return _METRICS.get(entity_id, _DEFAULT_METRIC)
 
 
-def _degree(entity_id: int, edges: list[dict]) -> int:
-    return sum(1 for r in edges if entity_id in (r["src"], r["dst"]))
-
-
 def _neighbours(entity_id: int, edges: list[dict]) -> set[int]:
     out = set()
     for r in edges:
@@ -178,51 +172,6 @@ def _neighbours(entity_id: int, edges: list[dict]) -> set[int]:
         elif r["dst"] == entity_id:
             out.add(r["src"])
     return out
-
-
-def _select(
-    center: int | None, depth: int, date_from: date | None,
-    date_to: date | None, types: str | None,
-) -> tuple[list[dict], list[dict]]:
-    """Apply the same filters the real endpoint will, to the fake set."""
-    edges = _RELATIONSHIPS
-    # Overlap, not a valid_from window: an edge that began before the range and
-    # never ended is still true inside it. Family and ownership links are
-    # open-ended, so testing valid_from alone erases them from any later range.
-    if date_to:
-        edges = [r for r in edges if date.fromisoformat(r["valid_from"]) <= date_to]
-    if date_from:
-        edges = [
-            r for r in edges
-            if r["valid_to"] is None or date.fromisoformat(r["valid_to"]) >= date_from
-        ]
-
-    keep = {e["id"] for e in _ENTITIES}
-    if types:
-        wanted = {t.strip() for t in types.split(",") if t.strip()}
-        keep = {e["id"] for e in _ENTITIES if e["entity_type"] in wanted}
-
-    if center is not None:
-        if center not in _BY_ID:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"no entity with id {center}",
-            )
-        reached = {center}
-        frontier = {center}
-        for _ in range(max(depth, 0)):
-            nxt: set[int] = set()
-            for node in frontier:
-                nxt |= _neighbours(node, edges)
-            frontier = nxt - reached
-            reached |= nxt
-        # The centre is added back after the intersection, not inside it - a
-        # types filter must never drop the node the graph is centred on.
-        keep = (keep & reached) | {center}
-
-    nodes = [e for e in _ENTITIES if e["id"] in keep]
-    edges = [r for r in edges if r["src"] in keep and r["dst"] in keep]
-    return nodes, edges
 
 
 @router.get("", response_model=GraphResponse)
@@ -271,27 +220,21 @@ def get_analytics(
     center: int | None = Query(default=None),
     depth: int = Query(default=2, ge=1, le=3),
     user: User = Depends(audited("analytics", "graph")),
+    db: Session = Depends(get_db),
 ) -> AnalyticsResponse:
-    """STUB. Per-node centrality and communities. Real NetworkX values in W4."""
-    nodes, edges = _select(center, depth, None, None, None)
-    metrics = [
-        NodeMetrics(
-            entity_id=n["id"], name=n["name"], degree=_degree(n["id"], edges),
-            betweenness=_metric(n["id"])["betweenness"],
-            pagerank=_metric(n["id"])["pagerank"],
-            community=_metric(n["id"])["community"],
+    """REAL - W4, F5. Centrality and communities over the caller's own view.
+
+    Computed on the scoped graph, not the whole network: an investigator's
+    "most central person" should be the most central person they are allowed
+    to see, which is also the only number they could act on.
+    """
+    if center is not None and not can_see_entity(db, user, center):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"no entity with id {center}",
         )
-        for n in nodes
-    ]
-    top = sorted(metrics, key=lambda m: m.betweenness, reverse=True)[:5]
-    return AnalyticsResponse(
-        metrics=metrics,
-        top_connectors=[
-            TopConnector(entity_id=m.entity_id, name=m.name, betweenness=m.betweenness)
-            for m in top
-        ],
-        community_count=len({m.community for m in metrics}),
-    )
+    result = analyse(build_graph(db, user, center_id=center, depth=depth))
+    return AnalyticsResponse(**result)
 
 
 @router.get("/path", response_model=PathResponse)
@@ -299,49 +242,21 @@ def get_path(
     from_id: int = Query(alias="from"),
     to_id: int = Query(alias="to"),
     user: User = Depends(audited("path", "graph")),
+    db: Session = Depends(get_db),
 ) -> PathResponse:
-    """STUB. Breadth-first shortest path over the fake edges."""
-    for node_id in (from_id, to_id):
-        if node_id not in _BY_ID:
+    """REAL - W4, F5. Shortest path across the caller's own view.
+
+    Both endpoints must be visible, and an invisible one gives the same 404 as
+    a missing one. A path is only meaningful through edges the caller can see,
+    so a route that exists for an admin may genuinely not exist here.
+    """
+    for entity_id in (from_id, to_id):
+        if not can_see_entity(db, user, entity_id):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"no entity with id {node_id}",
+                detail=f"no entity with id {entity_id}",
             )
-
-    previous: dict[int, int | None] = {from_id: None}
-    queue = [from_id]
-    while queue and to_id not in previous:
-        current = queue.pop(0)
-        for neighbour in sorted(_neighbours(current, _RELATIONSHIPS)):
-            if neighbour not in previous:
-                previous[neighbour] = current
-                queue.append(neighbour)
-
-    if to_id not in previous:
-        return PathResponse(found=False)
-
-    chain: list[int] = []
-    cursor: int | None = to_id
-    while cursor is not None:
-        chain.append(cursor)
-        cursor = previous[cursor]
-    chain.reverse()
-
-    hops = []
-    for a, b in zip(chain, chain[1:]):
-        edge = next(
-            r for r in _RELATIONSHIPS
-            if {r["src"], r["dst"]} == {a, b}
-        )
-        hops.append(edge["rel_type"])
-
-    return PathResponse(
-        found=True,
-        entity_ids=chain,
-        names=[_BY_ID[i]["name"] for i in chain],
-        rel_types=hops,
-        length=len(chain) - 1,
-    )
+    return PathResponse(**shortest_path(build_graph(db, user), from_id, to_id))
 
 
 @router.post("/whatif", response_model=WhatIfResponse)

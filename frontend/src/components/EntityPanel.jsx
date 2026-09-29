@@ -5,7 +5,7 @@ import client from '../api/client'
 /** Side panel for the selected node - attributes, relationships, neighbours.
  *  F3: "clicking a node opens a side panel with its attributes and its
  *  relationships". F4: the detail also names the source agency. */
-export default function EntityPanel({ entityId, onRecentre }) {
+export default function EntityPanel({ entityId, onRecentre, onSetPathEnd }) {
   // Derived at mount rather than corrected inside the effect. Dashboard gives
   // this component key={entityId}, so a different selection remounts it and
   // the initial state is right again without a reset render.
@@ -97,6 +97,25 @@ export default function EntityPanel({ entityId, onRecentre }) {
           )}
         </div>
       </header>
+
+      {onSetPathEnd && (
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => onSetPathEnd('from', entity.id)}
+            className="rounded border border-slate-600 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white"
+          >
+            Path from here
+          </button>
+          <button
+            type="button"
+            onClick={() => onSetPathEnd('to', entity.id)}
+            className="rounded border border-slate-600 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white"
+          >
+            Path to here
+          </button>
+        </div>
+      )}
 
       {attributes.length > 0 && (
         <section>
