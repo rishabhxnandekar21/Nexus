@@ -33,7 +33,7 @@
 | W3 | F2 audit log page + verify button | Rishabh | ⬜ not started | — | — | — |
 | W4 | F8b resolution review UI + merge | Rishabh | ⬜ not started | — | — | — |
 | W4 | F5 analytics + community colouring | Krish | 🔵 in review | w4-analytics-krish | — | 47/47 pytest; 662ms/1040ms vs 3s budget |
-| W5 | F6 timeline slider + play | Krish | ⬜ not started | — | — | — |
+| W5 | F6 timeline slider + play | Krish | 🟡 in progress | w5-timeline-krish | — | — |
 | W5 | F9 what-if + link prediction | Rishabh | ⬜ not started | — | — | — |
 | W6 | F10 LLM query + brief + cache | Rishabh | ⬜ not started | — | — | — |
 | W6 | Integration, loading/empty/error states | Krish | ⬜ not started | — | — | — |
