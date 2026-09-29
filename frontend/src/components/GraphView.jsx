@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import CytoscapeComponent from 'react-cytoscapejs'
 
+import Notice from './Notice'
+
 /**
  * The Cytoscape canvas - F3, plus the F5 analytics encodings.
  *
@@ -178,11 +180,10 @@ export default function GraphView({
 
   if (memoElements.length === 0) {
     return (
-      <div className="flex h-[32rem] items-center justify-center rounded-lg border border-dashed border-slate-600 bg-slate-900">
-        <p className="text-sm text-slate-400">
-          No entities match. Widen the date range, or clear the search.
-        </p>
-      </div>
+      <Notice tone="empty" title="Nothing to draw" className="h-[32rem]">
+        No entities match. Widen the year range, clear the search, or show the
+        whole network.
+      </Notice>
     )
   }
 

@@ -3,6 +3,80 @@
 > Only Krish writes in this file. Newest entry at the top.
 > Entry format is in `TEAM-WORKFLOW.md` Section 8.
 
+### 2026-09-29 · W6 integration pass · `w6-integration-krish`
+
+The PRD Week 6 exit criterion is "no screen shows a raw error or an infinite
+spinner". Chasing that properly turned up two real bugs rather than just
+tidying markup.
+
+**Bug 1 - a backend restart silently logged you out**
+`AuthContext` cleared the token on *any* `/auth/me` failure, including a
+network error. Kill uvicorn, reload, and you were back at the login form with
+your token discarded. During a demo that reads as "the app lost my session"
+and costs you a re-login in front of the panel.
+
+Now only a **401** clears the token - that is the server actually rejecting it.
+A network error or a 5xx keeps the session and shows "Cannot reach the server -
+you are still signed in" with a Try again button. **Verified by killing the
+backend, reloading, restarting it and clicking Try again: straight back into
+the dashboard, no re-login.** This is the `PRD.md` Section 9 reliability line.
+
+**Bug 2 - my own error boundary was lying**
+Added `ErrorBoundary.jsx` for the white-screen failures I hit twice in W3.
+Injected a throw to test it: the nav survived and the page area showed the
+error, which is right. But navigating to another page showed **the same error
+screen**, because the boundary kept its state across routes. "The rest of the
+application is fine" was false. Keyed the inner boundary on
+`location.pathname` so it remounts on navigation. Re-tested: Dashboard broken,
+Audit log renders normally. Throw reverted, tree clean.
+
+**Also done**
+- `Notice.jsx` - one component for loading, empty and error, so the same
+  condition looks the same everywhere. Each screen had grown its own markup.
+- Two boundaries: one outermost in `main.jsx` catching anything, one inside
+  the shell so a page crash keeps the nav and the other screens reachable.
+- The graph error strip gained a **Retry** that refires the fetch, so a failed
+  load does not need a page reload.
+- `CLAUDE.md` Section 4 tree updated with `ErrorBoundary.jsx`, `Notice.jsx`
+  and `Placeholder.jsx`, which existed but were never listed.
+
+**Verified**
+- Backend killed mid-session: session held, clear message, retry recovers.
+- Render crash: nav survives, other pages reachable, Try again and Reload work.
+- Empty graph, no search matches, no node selected, cross-agency 404 in the
+  panel - all render a Notice rather than a blank area.
+- 47 pytest passing, oxlint clean, production build succeeds, chain valid at 98.
+
+**Not mine, still missing**
+Resolution, Audit log and Stats are placeholder pages because they are
+Rishabh's. Their loading and error states do not exist yet, so **the Week 6
+exit criterion is only met for the screens that exist.** That is worth being
+precise about rather than ticking the row and moving on.
+
+**Files touched**
+- `frontend/src/components/ErrorBoundary.jsx` (new),
+  `frontend/src/components/Notice.jsx` (new), `frontend/src/App.jsx`,
+  `frontend/src/main.jsx`, `frontend/src/context/AuthContext.jsx`,
+  `frontend/src/pages/Dashboard.jsx`,
+  `frontend/src/components/GraphView.jsx`, `EntityPanel.jsx`, `CLAUDE.md`,
+  `PROGRESS.md`, `progress/krish.md`
+
+**Next**
+- **My lane is finished.** Everything left is yours or joint: W3 F8a and F2,
+  W4 F8b, W5 F9, W6 F10, then W7 together.
+
+**For Rishabh**
+- **Use `Notice` for your three pages** - `tone="loading" | "empty" | "error"`,
+  with an optional `action`. That is what keeps the app looking like one
+  application rather than five.
+- The `useAuth()` hook now also returns `unreachable` and `retry`.
+- When your pages land, the W6 row should be re-checked against them - I can
+  only claim it for the screens that exist today.
+- The 300-line question from my last entry is still open, and `Dashboard.jsx`
+  is now the largest file I own.
+
+---
+
 ### 2026-09-29 · W5 F6 timeline slider · `w5-timeline-krish`
 
 **Done**

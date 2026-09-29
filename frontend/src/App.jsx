@@ -1,5 +1,7 @@
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
+import ErrorBoundary from './components/ErrorBoundary'
+import Notice from './components/Notice'
 import Placeholder from './components/Placeholder'
 import { useAuth } from './context/AuthContext'
 import Dashboard from './pages/Dashboard'
@@ -13,15 +15,41 @@ const NAV = [
 ]
 
 function RequireAuth({ children }) {
-  const { user, loading } = useAuth()
+  const { user, loading, unreachable, retry } = useAuth()
   const location = useLocation()
 
   // Wait for /auth/me before deciding. Without this a refresh on any page
   // flashes the login screen even though the token is perfectly good.
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-900">
-        <p className="text-sm text-slate-400">Loading…</p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-900 px-4">
+        <Notice tone="loading" title="Signing you in…" className="w-full max-w-sm" />
+      </div>
+    )
+  }
+  // Server down while holding a valid token: hold the session and offer a
+  // retry, rather than bouncing to login and making them type credentials
+  // back in because uvicorn was restarting.
+  if (!user && unreachable) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-900 px-4">
+        <Notice
+          tone="error"
+          title="Cannot reach the server"
+          className="w-full max-w-sm"
+          action={
+            <button
+              type="button"
+              onClick={retry}
+              className="mt-1 rounded bg-sky-700 px-3 py-1.5 text-sm text-white hover:bg-sky-600"
+            >
+              Try again
+            </button>
+          }
+        >
+          You are still signed in. The backend is not answering — check that it
+          is running on port 8000.
+        </Notice>
       </div>
     )
   }
@@ -33,6 +61,7 @@ function RequireAuth({ children }) {
 
 function Shell({ children }) {
   const { user, logout } = useAuth()
+  const location = useLocation()
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -84,7 +113,14 @@ function Shell({ children }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      {/* A second boundary inside the shell: a crash on one page keeps the
+          nav and the other screens reachable, instead of blanking the app.
+          Keyed on the path so navigating away actually clears it - without
+          that the error screen follows you to every other page, which makes
+          "the rest of the application is fine" untrue. */}
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <ErrorBoundary key={location.pathname}>{children}</ErrorBoundary>
+      </main>
     </div>
   )
 }

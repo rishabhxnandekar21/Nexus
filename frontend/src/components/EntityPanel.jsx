@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import client from '../api/client'
+import Notice from './Notice'
 
 /** Side panel for the selected node - attributes, relationships, neighbours.
  *  F3: "clicking a node opens a side panel with its attributes and its
@@ -47,28 +48,18 @@ export default function EntityPanel({ entityId, onRecentre, onSetPathEnd }) {
 
   if (state.status === 'idle') {
     return (
-      <aside className="rounded-lg border border-dashed border-slate-600 bg-slate-800/50 p-6">
-        <p className="text-sm text-slate-400">Select a node to see its details.</p>
-      </aside>
+      <Notice tone="empty" title="No node selected">
+        Click a node on the graph, or search for one.
+      </Notice>
     )
   }
 
   if (state.status === 'loading') {
-    return (
-      <aside className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-        <p className="text-sm text-slate-400">Loading…</p>
-      </aside>
-    )
+    return <Notice tone="loading" title="Loading details…" />
   }
 
   if (state.status === 'error') {
-    return (
-      <aside className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-        <p role="alert" className="text-sm text-red-300">
-          {state.error}
-        </p>
-      </aside>
-    )
+    return <Notice tone="error" title="Could not open this record">{state.error}</Notice>
   }
 
   const { entity, relationships, neighbours } = state.data

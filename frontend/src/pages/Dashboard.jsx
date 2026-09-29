@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import client from '../api/client'
 import EntityPanel from '../components/EntityPanel'
 import GraphView from '../components/GraphView'
+import { ErrorStrip } from '../components/Notice'
+import Notice from '../components/Notice'
 import SearchBar from '../components/SearchBar'
 import Timeline from '../components/Timeline'
 import { useAuth } from '../context/AuthContext'
@@ -44,6 +46,9 @@ export default function Dashboard() {
   const [pathEnds, setPathEnds] = useState({ from: null, to: null })
   const [range, setRange] = useState(null)
   const [playing, setPlaying] = useState(false)
+  // Bumping this refires the fetch effect, so a failed load is recoverable
+  // without a page reload - the backend may simply have been restarting.
+  const [reloads, setReloads] = useState(0)
 
   // One piece of state per request, stamped with the request it answers, so
   // "loading" is derived at render time rather than set at the top of an
@@ -112,7 +117,7 @@ export default function Dashboard() {
     return () => {
       cancelled = true
     }
-  }, [centerId, depth, requestKey])
+  }, [centerId, depth, requestKey, reloads])
 
   // Shortest path, whenever both ends are set. Same keyed-answer shape as the
   // graph: with only one end picked there is simply no path to show, which is
@@ -252,9 +257,7 @@ export default function Dashboard() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded bg-red-950 px-3 py-2 text-sm text-red-300">
-          {error}
-        </p>
+        <ErrorStrip onRetry={() => setReloads((n) => n + 1)}>{error}</ErrorStrip>
       )}
 
       {(pathEnds.from != null || pathEnds.to != null) && (
@@ -281,9 +284,9 @@ export default function Dashboard() {
       <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
         <div>
           {loading ? (
-            <div className="flex h-[32rem] items-center justify-center rounded-lg border border-slate-700 bg-slate-900">
-              <p className="text-sm text-slate-400">Loading graph…</p>
-            </div>
+            <Notice tone="loading" title="Loading graph…" className="h-[32rem]">
+              Building the network you are allowed to see.
+            </Notice>
           ) : (
             <GraphView
               elements={visible}

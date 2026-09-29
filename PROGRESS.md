@@ -36,7 +36,7 @@
 | W5 | F6 timeline slider + play | Krish | 🔵 in review | w5-timeline-krish | — | ring grows 5->32 nodes; play steps 2019-2025 |
 | W5 | F9 what-if + link prediction | Rishabh | ⬜ not started | — | — | — |
 | W6 | F10 LLM query + brief + cache | Rishabh | ⬜ not started | — | — | — |
-| W6 | Integration, loading/empty/error states | Krish | 🟡 in progress | w6-integration-krish | — | — |
+| W6 | Integration, loading/empty/error states | Krish | 🔵 in review | w6-integration-krish | — | survives backend restart; boundary keeps nav |
 | W7 | Freeze, README, rehearsal, deck | Both | ⬜ not started | — | — | — |
 
 Status values: ⬜ not started · 🟡 in progress · 🔵 in review · ✅ done
@@ -77,6 +77,7 @@ an existing line.
 | 2026-09-29 | Krish | graph.py, routers/graph.py | W2 F3a. New `app/graph.py` with `build_graph()`, `can_see_entity()` and `to_cytoscape()`. `GET /api/graph` now reads Postgres instead of the fake set - **it returns an empty graph until `seed.py` runs, which is correct, not a failure.** The other four graph routes and all of `routers/entities.py` are still stubs. | no |
 | 2026-09-29 | Krish | dev_data.py | W2 F3a verification. New **temporary** `backend/dev_data.py` loads the 12 stub records into Postgres so the W2 exit criterion can actually be checked - both tokens returned an empty graph before it. **It is not `seed.py` and does not pretend to be**: no scenarios, no volumes, no determinism, no `--reset`/`--verify`. It reads its rows from `routers/entities.py`, so there is one copy of the fake network. Delete it with the stubs when F7 lands. | yes - `python dev_users.py && python dev_data.py` |
 | 2026-09-29 | Krish | dev_data.py (deleted), routers/graph.py, routers/entities.py | W3 F3b. **`dev_data.py` deleted** - `seed.py` replaces it, as agreed. Its twelve fake records moved inline into `routers/graph.py`, which is the only remaining consumer: the four endpoints there that are still stubs (analytics W4; path, what-if, predict W5). `routers/entities.py` is now real and database-backed. Entity visibility is defined once, in `graph.py` as `entity_scope()` / `relationship_scope()`, and search, detail and the graph all use it. | no - `seed.py --reset` covers it |
+| 2026-09-29 | Krish | CLAUDE.md | W6. Section 4 tree only: added `ErrorBoundary.jsx`, `Notice.jsx` and `Placeholder.jsx` under `components/`. All three exist and none were listed - same correction Rishabh made when `analysis.py` was missing. | no |
 
 ---
 

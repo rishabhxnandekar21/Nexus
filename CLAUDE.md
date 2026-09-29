@@ -222,7 +222,10 @@ Nexus/
             ├── SearchBar.jsx
             ├── NLQueryBox.jsx
             ├── AnalysisPanel.jsx    # what-if / prediction results
-            └── EntityPanel.jsx
+            ├── EntityPanel.jsx
+            ├── ErrorBoundary.jsx    # catches a render crash, keeps the app up
+            ├── Notice.jsx           # shared loading / empty / error states
+            └── Placeholder.jsx      # stands in for a page not written yet
 ```
 
 Keep files under ~300 lines. If one grows past that, split it by feature.
