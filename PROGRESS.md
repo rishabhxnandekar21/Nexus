@@ -26,7 +26,7 @@
 | W1 | `schemas.py` — all contracts | Both | 🟡 in progress | w1-6-schemas-krish | — | — |
 | W1 | Router stubs returning fake data | Both | ⬜ not started | w1-7-stubs-krish (claimed) | — | — |
 | W1 | Frontend shell, AuthContext, login | Both | 🟡 in progress | w1-8-frontend-krish | — | — |
-| W2 | F7 `seed.py` + 3 scenarios | Rishabh | ⬜ not started | — | — | — |
+| W2 | F7 `seed.py` + 3 scenarios | Rishabh | 🔵 in review | phase-1-seed-rishabh | — | 3 scenarios pass; digest reproducible; 1.6s |
 | W2 | F3a `graph.py` + `/api/graph` | Krish | 🟡 in progress | w2-graph-krish | — | — |
 | W3 | F3b GraphView, panel, search | Krish | 🟡 in progress | w3-graphview-krish | — | — |
 | W3 | F8a resolution scoring + endpoints | Rishabh | ⬜ not started | — | — | — |
@@ -110,3 +110,4 @@ re-litigates them.
 | 2026-09-25 | Hybrid split: foundation together, then vertical ownership | Removes the conflict surface once instead of managing it for six weeks |
 | 2026-09-25 | Short-lived phase branches + PR, max 3 days | Keeps `main` green; puts PRs on both GitHub profiles |
 | 2026-09-25 | `build_graph()` in `graph.py` is the interface between graph and analysis | Lets Rishabh build analytics without editing Krish's files |
+| 2026-09-29 | Rishabh | auth.py, dev_users.py | W2 F7. `auth.py` docstring line now says `seed.py` instead of `dev_users.py` - one comment line, no behaviour change. **`backend/dev_users.py` deleted**; `seed.py` supersedes it and keeps the same `investigator`/`admin` usernames and passwords, so nothing that used it breaks. | yes - run `python seed.py --reset` |
