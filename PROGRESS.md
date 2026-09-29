@@ -49,8 +49,8 @@ Status values: ⬜ not started · 🟡 in progress · 🔵 in review · ✅ done
 |---|---|---|---|
 | S1 | Multi-source data appears as one graph | Krish | ⬜ |
 | S2 | Two logins → two visibly different graphs | Krish | ⬜ |
-| S3 | Duplicate proposed, human-confirmed, nodes merge on screen | Rishabh | ⬜ |
-| S4 | Tampered audit row → `/audit/verify` reports the exact seq | Rishabh | ⬜ |
+| S3 | Duplicate proposed, human-confirmed, nodes merge on screen | Rishabh | ✅ scores 0.8556, merge 650->649 entities, audited |
+| S4 | Tampered audit row → `/audit/verify` reports the exact seq | Rishabh | ✅ seq 3 tampered → broken_at_seq 3; deletion caught too |
 | S5 | Timeline replays growth; bridge removal splits the graph | Both | ⬜ |
 
 ---
