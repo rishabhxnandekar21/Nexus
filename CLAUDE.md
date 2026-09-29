@@ -199,7 +199,8 @@ Nexus/
 │           ├── graph.py
 │           ├── resolution.py
 │           ├── query.py
-│           └── audit.py
+│           ├── audit.py
+│           └── stats.py
 └── frontend/
     ├── package.json
     ├── vite.config.js           # includes /api proxy to localhost:8000
@@ -342,6 +343,13 @@ Every route that reads or writes graph data writes an audit entry.
   query against Postgres**. The LLM never writes SQL directly.
 - `POST /query/brief` — body `{entity_id}` → a written case summary of that
   entity's network
+
+### Stats
+- `GET /stats` — landing-page counts, agency-scoped: totals, counts by entity
+  type, relationships by agency, relationships by year, pending resolution
+  candidates, and audit-chain status. Added for F11, which the PRD requires but
+  which had no endpoint written for it. The chain-verification fields are null
+  for a non-admin.
 
 ### Audit
 - `GET /audit?limit=100` — recent entries

@@ -399,3 +399,50 @@ class VerifyResponse(BaseModel):
     valid: bool
     broken_at_seq: int | None = None
     checked: int
+
+
+# --------------------------------------------------------------------------
+# Stats  -  GET /api/stats   (F11)
+# --------------------------------------------------------------------------
+
+
+class TypeCount(BaseModel):
+    entity_type: str
+    count: int
+
+
+class AgencyCount(BaseModel):
+    agency_code: str
+    count: int
+
+
+class YearCount(BaseModel):
+    year: int
+    count: int
+
+
+class ChainStatus(BaseModel):
+    """Audit chain health. Only an admin may verify, so the verification fields
+    are null for anyone else rather than absent - the page needs to tell the
+    difference between "not allowed to check" and "checked and fine"."""
+
+    rows: int
+    valid: bool | None = None
+    broken_at_seq: int | None = None
+    checked: int | None = None
+    admin_only: bool = False
+
+
+class StatsResponse(BaseModel):
+    """Landing-page counts, scoped to the caller like everything else."""
+
+    scope: str
+    entities: int
+    relationships: int
+    agencies: int
+    users: int
+    by_entity_type: list[TypeCount] = Field(default_factory=list)
+    relationships_by_agency: list[AgencyCount] = Field(default_factory=list)
+    relationships_by_year: list[YearCount] = Field(default_factory=list)
+    resolution_pending: int = 0
+    chain: ChainStatus
