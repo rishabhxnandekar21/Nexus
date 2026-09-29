@@ -29,13 +29,13 @@
 | W2 | F7 `seed.py` + 3 scenarios | Rishabh | ✅ done | phase-1-seed-rishabh | #2 | 3 scenarios pass; digest reproducible; 1.6s |
 | W2 | F3a `graph.py` + `/api/graph` | Krish | ✅ done | w2-graph-krish | merged ac0f495 | re-measured on seed.py: 402 vs 500 nodes, 296-327ms |
 | W3 | F3b GraphView, panel, search | Krish | ✅ done | w3-graphview-krish | merged ac0f495 | S2 on screen: 402/410 vs 217/92 vs 500 |
-| W3 | F8a resolution scoring + endpoints | Rishabh | ⬜ not started | — | — | — |
-| W3 | F2 audit log page + verify button | Rishabh | ⬜ not started | — | — | — |
-| W4 | F8b resolution review UI + merge | Rishabh | ⬜ not started | — | — | — |
+| W3 | F8a resolution scoring + endpoints | Rishabh | 🟡 Rishabh | w3-resolution-rishabh | — | — |
+| W3 | F2 audit log page + verify button | Rishabh | 🟡 Rishabh | w3-audit-rishabh | — | — |
+| W4 | F8b resolution review UI + merge | Rishabh | 🟡 Rishabh | w4-resolution-rishabh | — | — |
 | W4 | F5 analytics + community colouring | Krish | ✅ done | w4-analytics-krish | merged ac0f495 | 47/47 pytest; 662ms/1040ms vs 3s budget |
 | W5 | F6 timeline slider + play | Krish | ✅ done | w5-timeline-krish | merged ac0f495 | ring grows 5->32 nodes; play steps 2019-2025 |
-| W5 | F9 what-if + link prediction | Rishabh | ⬜ not started | — | — | — |
-| W6 | F10 LLM query + brief + cache | Rishabh | ⬜ not started | — | — | — |
+| W5 | F9 what-if + link prediction | Rishabh | 🟡 Rishabh | w5-analysis-rishabh | — | — |
+| W6 | F10 LLM query + brief + cache | Rishabh | 🟡 Rishabh | w6-llm-rishabh | — | — |
 | W6 | Integration, loading/empty/error states | Krish | ✅ done | w6-integration-krish | merged ac0f495 | survives backend restart; boundary keeps nav |
 | W7 | Freeze, README, rehearsal, deck | Both | ⬜ not started | — | — | — |
 
