@@ -30,7 +30,7 @@
 | W2 | F3a `graph.py` + `/api/graph` | Krish | ✅ done | w2-graph-krish | merged ac0f495 | re-measured on seed.py: 402 vs 500 nodes, 296-327ms |
 | W3 | F3b GraphView, panel, search | Krish | ✅ done | w3-graphview-krish | merged ac0f495 | S2 on screen: 402/410 vs 217/92 vs 500 |
 | W3 | F8a resolution scoring + endpoints | Rishabh | 🟡 Rishabh | w3-resolution-rishabh | — | — |
-| W3 | F2 audit log page + verify button | Rishabh | 🟡 Rishabh | w3-audit-rishabh | — | — |
+| W3 | F2 audit log page + verify button | Rishabh | 🔵 in review | w3-audit-rishabh | — | S4 proved: 16/16, tamper named at exact seq |
 | W4 | F8b resolution review UI + merge | Rishabh | 🟡 Rishabh | w4-resolution-rishabh | — | — |
 | W4 | F5 analytics + community colouring | Krish | ✅ done | w4-analytics-krish | merged ac0f495 | 47/47 pytest; 662ms/1040ms vs 3s budget |
 | W5 | F6 timeline slider + play | Krish | ✅ done | w5-timeline-krish | merged ac0f495 | ring grows 5->32 nodes; play steps 2019-2025 |
@@ -121,3 +121,4 @@ re-litigates them.
 | 2026-09-25 | Short-lived phase branches + PR, max 3 days | Keeps `main` green; puts PRs on both GitHub profiles |
 | 2026-09-25 | `build_graph()` in `graph.py` is the interface between graph and analysis | Lets Rishabh build analytics without editing Krish's files |
 | 2026-09-29 | Rishabh | auth.py, dev_users.py | W2 F7. `auth.py` docstring line now says `seed.py` instead of `dev_users.py` - one comment line, no behaviour change. **`backend/dev_users.py` deleted**; `seed.py` supersedes it and keeps the same `investigator`/`admin` usernames and passwords, so nothing that used it breaks. | yes - run `python seed.py --reset` |
+| 2026-09-29 | Rishabh | main.py | W3 F2. Two lines mounting `routers/audit.py`. | no |
