@@ -36,7 +36,7 @@
 | W5 | F6 timeline slider + play | Krish | 🟡 in progress | w5-timeline-krish | — | — |
 | W5 | F9 what-if + link prediction | Rishabh | ⬜ not started | — | — | — |
 | W6 | F10 LLM query + brief + cache | Rishabh | ⬜ not started | — | — | — |
-| W6 | Integration, loading/empty/error states | Krish | ⬜ not started | — | — | — |
+| W6 | Integration, loading/empty/error states | Krish | 🟡 in progress | w6-integration-krish | — | — |
 | W7 | Freeze, README, rehearsal, deck | Both | ⬜ not started | — | — | — |
 
 Status values: ⬜ not started · 🟡 in progress · 🔵 in review · ✅ done
